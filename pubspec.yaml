@@ -1,8 +1,7 @@
 name: flutter_mutation
 description: A new Flutter package project.
 version: 0.0.1
-authors:
-  - cranix@cranix.net
+repository: https://github.com/cranix/flutter_mutation
 
 environment:
   sdk: '>=2.18.4 <3.0.0'
@@ -11,12 +10,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_hooks: ^0.18.5+1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.0
-  flutter_hooks: ^0.18.5+1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
