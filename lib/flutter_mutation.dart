@@ -1,4 +1,5 @@
 library flutter_mutation;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -34,18 +35,19 @@ class Mutation<R> extends ChangeNotifier {
 
   final List<MutationOnUpdateDataCallback<R>> _onUpdateDataList = [];
   final List<MutationOnUpdateErrorCallback> _onUpdateErrorList = [];
-  final List<MutationOnUpdateInitializingCallback> _onUpdateInitializingList = [];
+  final List<MutationOnUpdateInitializingCallback> _onUpdateInitializingList =
+      [];
   final List<MutationOnUpdateLoadingCallback> _onUpdateLoadingList = [];
   final List<MutationOnClearCallback> _onClearList = [];
 
   Mutation(
       {R? initialValue,
-        MutationGetInitialValueCallback<R>? getInitialValue,
-        MutationOnUpdateInitializingCallback? onUpdateInitializing,
-        MutationOnUpdateDataCallback<R>? onUpdateData,
-        MutationOnUpdateErrorCallback? onUpdateError,
-        MutationOnUpdateLoadingCallback? onUpdateLoading,
-        MutationOnClearCallback? onClear}) {
+      MutationGetInitialValueCallback<R>? getInitialValue,
+      MutationOnUpdateInitializingCallback? onUpdateInitializing,
+      MutationOnUpdateDataCallback<R>? onUpdateData,
+      MutationOnUpdateErrorCallback? onUpdateError,
+      MutationOnUpdateLoadingCallback? onUpdateLoading,
+      MutationOnClearCallback? onClear}) {
     if (onUpdateData != null) {
       _onUpdateDataList.add(onUpdateData);
     }
@@ -104,7 +106,6 @@ class Mutation<R> extends ChangeNotifier {
     return this;
   }
 
-
   Mutation<R> addOnUpdateInitializingCallback(
       MutationOnUpdateInitializingCallback callback) {
     _onUpdateInitializingList.add(callback);
@@ -116,7 +117,6 @@ class Mutation<R> extends ChangeNotifier {
     _onUpdateInitializingList.remove(callback);
     return this;
   }
-
 
   Mutation<R> addOnClearCallback(MutationOnClearCallback callback) {
     _onClearList.add(callback);
@@ -135,8 +135,7 @@ class Mutation<R> extends ChangeNotifier {
       } else {
         dataList = [data];
       }
-    }
-    else {
+    } else {
       if (!append) {
         dataList = [];
       }
@@ -341,17 +340,21 @@ class MutationCache {
   static final instance = MutationCache._();
   final _data = <String, Mutation>{};
   final _retainCount = <String, int>{};
+  final _staticKeys = [];
 
   MutationCache._();
 
-  Mutation<R> retain<R>(String retainKey,
-      {R? initialValue,
-        MutationGetInitialValueCallback<R>? getInitialValue,
-        MutationOnUpdateDataCallback<R>? onUpdateData,
-        MutationOnUpdateErrorCallback? onUpdateError,
-        MutationOnUpdateInitializingCallback? onUpdateInitializing,
-        MutationOnUpdateLoadingCallback? onUpdateLoading,
-        MutationOnClearCallback? onClear}) {
+  Mutation<R> retain<R>(
+    String retainKey, {
+    R? initialValue,
+    MutationGetInitialValueCallback<R>? getInitialValue,
+    MutationOnUpdateDataCallback<R>? onUpdateData,
+    MutationOnUpdateErrorCallback? onUpdateError,
+    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateLoadingCallback? onUpdateLoading,
+    MutationOnClearCallback? onClear,
+    bool isStatic = false,
+  }) {
     var mutation = _data[retainKey] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(
@@ -364,11 +367,20 @@ class MutationCache {
           onClear: onClear);
       _data[retainKey] = mutation;
     }
-    _retainCount[retainKey] = (_retainCount[retainKey] ?? 0) + 1;
+    if (isStatic) {
+      _staticKeys.add(retainKey);
+    }
+    else {
+      _retainCount[retainKey] = (_retainCount[retainKey] ?? 0) + 1;
+    }
+
     return mutation;
   }
 
   bool release(String retainKey) {
+    if (_staticKeys.contains(retainKey)) {
+      return false;
+    }
     int? count = _retainCount[retainKey];
     if (count == null) {
       return false;
@@ -384,15 +396,20 @@ class MutationCache {
   }
 }
 
-Mutation<R> useMutation<R>(
-    {R? initialValue,
-      MutationGetInitialValueCallback<R>? getInitialValue,
-      MutationOnUpdateDataCallback<R>? onUpdateData,
-      MutationOnUpdateErrorCallback? onUpdateError,
-      MutationOnUpdateInitializingCallback? onUpdateInitializing,
-      MutationOnUpdateLoadingCallback? onUpdateLoading,
-      MutationOnClearCallback? onClear,
-      String? retainKey}) {
+Mutation<R> useMutation<R>({
+  R? initialValue,
+  MutationGetInitialValueCallback<R>? getInitialValue,
+  MutationOnUpdateDataCallback<R>? onUpdateData,
+  MutationOnUpdateErrorCallback? onUpdateError,
+  MutationOnUpdateInitializingCallback? onUpdateInitializing,
+  MutationOnUpdateLoadingCallback? onUpdateLoading,
+  MutationOnClearCallback? onClear,
+  String? retainKey,
+  bool isStatic = false,
+}) {
+  if (isStatic && retainKey == null) {
+    throw const MutationException("static must have retainKey");
+  }
   String key = retainKey ?? UniqueKey().toString();
   final mutation = useMemoized(() {
     return MutationCache.instance.retain<R>(key,
@@ -402,7 +419,8 @@ Mutation<R> useMutation<R>(
         onUpdateError: onUpdateError,
         onUpdateInitializing: onUpdateInitializing,
         onUpdateLoading: onUpdateLoading,
-        onClear: onClear);
+        onClear: onClear,
+        isStatic: isStatic);
   }, [key]);
   useEffect(() {
     return () {
