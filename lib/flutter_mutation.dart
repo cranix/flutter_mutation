@@ -340,7 +340,7 @@ class MutationCache {
   static final instance = MutationCache._();
   final _data = <String, Mutation>{};
   final _retainCount = <String, int>{};
-  final _staticKeys = [];
+  final _staticKeys = <String>{};
 
   MutationCache._();
 

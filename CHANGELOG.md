@@ -6,3 +6,7 @@
 ## 0.0.2
 
 * add isStatic
+
+## 0.0.3
+
+* small bug fix
