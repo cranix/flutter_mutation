@@ -369,11 +369,9 @@ class MutationCache {
     }
     if (isStatic) {
       _staticKeys.add(retainKey);
-    }
-    else {
+    } else {
       _retainCount[retainKey] = (_retainCount[retainKey] ?? 0) + 1;
     }
-
     return mutation;
   }
 
@@ -410,7 +408,7 @@ Mutation<R> useMutation<R>({
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
-  String key = retainKey ?? UniqueKey().toString();
+  String key = useMemoized(() => retainKey ?? UniqueKey().toString());
   final mutation = useMemoized(() {
     return MutationCache.instance.retain<R>(key,
         initialValue: initialValue,

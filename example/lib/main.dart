@@ -1,4 +1,5 @@
 import 'package:example/async_get/async_get_page.dart';
+import 'package:example/async_get2/async_get2_page.dart';
 import 'package:example/caching/caching_page.dart';
 import 'package:example/global_state/global_state_page.dart';
 import 'package:example/pagination/pagination_page.dart';
@@ -76,7 +77,12 @@ class MyHomePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).push(GlobalStatePage.createRoute());
                 },
-                child: const Text("global state"))
+                child: const Text("global state")),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(AsyncGet2Page.createRoute());
+                },
+                child: const Text("async get2"))
           ],
         ),
       ),

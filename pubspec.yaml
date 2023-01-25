@@ -1,6 +1,6 @@
 name: flutter_mutation
 description: easy to use flutter async state with hook
-version: 0.0.3
+version: 0.0.6
 repository: https://github.com/cranix/flutter_mutation
 
 environment:
@@ -11,6 +11,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_hooks: ^0.18.5+1
+
 
 dev_dependencies:
   flutter_test:

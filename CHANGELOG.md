@@ -10,3 +10,7 @@
 ## 0.0.3
 
 * small bug fix
+
+## 0.0.6
+
+* bug fix
