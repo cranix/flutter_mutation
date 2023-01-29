@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 typedef MutationOnDisposeCallback<R> = void Function(Mutation<R> mutation);
-typedef MutationOnCreateCallback<R> = void Function(Mutation<R> mutation);
+typedef MutationOnCreateCallback<R> = void Function()? Function(Mutation<R> mutation);
 typedef MutationOnUpdateDataCallback<R> = void Function(R? data);
 typedef MutationOnUpdateErrorCallback = void Function(Object error);
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
@@ -79,7 +79,12 @@ class Mutation<R> extends ChangeNotifier {
       _initMutate(getInitialValue());
     }
     if (onCreate != null) {
-      onCreate(this);
+      final res = onCreate(this);
+      if (res != null) {
+        _onDisposeList.add((mutation) {
+           res();
+        });
+      }
     }
   }
 
@@ -88,7 +93,7 @@ class Mutation<R> extends ChangeNotifier {
     return this;
   }
 
-  Mutation<R> removeOnReleaseCallback(MutationOnDisposeCallback<R> callback) {
+  Mutation<R> removeOnDisposeCallback(MutationOnDisposeCallback<R> callback) {
     _onDisposeList.remove(callback);
     return this;
   }
@@ -365,13 +370,112 @@ bool useMutationLoading<R>(Mutation<R> mutation) {
   return state.value;
 }
 
+List _getOrNewMapList(Map<String, List> map, String key) {
+  var list = map[key];
+  if (list == null) {
+    list = [];
+    map[key] = list;
+  }
+  return list;
+}
+
+bool _removeMapList(Map<String, List> map, String key, dynamic value) {
+  final list = map[key];
+  if (list == null) {
+    return false;
+  }
+  return list.remove(value);
+}
+
 class MutationCache {
   static final instance = MutationCache._();
   final _data = <String, Mutation>{};
   final _retainCount = <String, int>{};
   final _staticKeys = <String>{};
 
+  final _onUpdateDataListMap = <String, List>{};
+  final _onUpdateErrorListMap = <String, List>{};
+  final _onUpdateInitializingListMap = <String, List>{};
+  final _onUpdateLoadingListMap = <String, List>{};
+  final _onClearListMap = <String, List>{};
+  final _onCreateListMap = <String, List>{};
+  final _onDisposeListMap = <String, List>{};
+
   MutationCache._();
+
+  void addObserve<R>(
+    String retainKey, {
+    MutationOnUpdateDataCallback<R>? onUpdateData,
+    MutationOnUpdateErrorCallback? onUpdateError,
+    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateLoadingCallback? onUpdateLoading,
+    MutationOnClearCallback? onClear,
+    MutationOnCreateCallback<R>? onCreate,
+    MutationOnDisposeCallback<R>? onDispose,
+  }) {
+    if (onUpdateData != null) {
+      final list = _getOrNewMapList(_onUpdateDataListMap, retainKey);
+      list.add(onUpdateData);
+    }
+    if (onUpdateError != null) {
+      final list = _getOrNewMapList(_onUpdateErrorListMap, retainKey);
+      list.add(onUpdateError);
+    }
+    if (onUpdateInitializing != null) {
+      final list = _getOrNewMapList(_onUpdateInitializingListMap, retainKey);
+      list.add(onUpdateInitializing);
+    }
+    if (onUpdateLoading != null) {
+      final list = _getOrNewMapList(_onUpdateLoadingListMap, retainKey);
+      list.add(onUpdateLoading);
+    }
+    if (onClear != null) {
+      final list = _getOrNewMapList(_onClearListMap, retainKey);
+      list.add(onClear);
+    }
+    if (onCreate != null) {
+      final list = _getOrNewMapList(_onCreateListMap, retainKey);
+      list.add(onCreate);
+    }
+    if (onDispose != null) {
+      final list = _getOrNewMapList(_onDisposeListMap, retainKey);
+      list.add(onDispose);
+    }
+  }
+
+  bool removeObserve<R>(
+    String retainKey, {
+    MutationOnUpdateDataCallback<R>? onUpdateData,
+    MutationOnUpdateErrorCallback? onUpdateError,
+    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateLoadingCallback? onUpdateLoading,
+    MutationOnClearCallback? onClear,
+    MutationOnCreateCallback<R>? onCreate,
+    MutationOnDisposeCallback<R>? onDispose,
+  }) {
+    if (onUpdateData != null) {
+      return _removeMapList(_onUpdateDataListMap, retainKey, onUpdateData);
+    }
+    if (onUpdateError != null) {
+      return _removeMapList(_onUpdateErrorListMap, retainKey, onUpdateData);
+    }
+    if (onUpdateInitializing != null) {
+      return _removeMapList(_onUpdateInitializingListMap, retainKey, onUpdateData);
+    }
+    if (onUpdateLoading != null) {
+      return _removeMapList(_onUpdateLoadingListMap, retainKey, onUpdateData);
+    }
+    if (onClear != null) {
+      return _removeMapList(_onClearListMap, retainKey, onUpdateData);
+    }
+    if (onCreate != null) {
+      return _removeMapList(_onCreateListMap, retainKey, onUpdateData);
+    }
+    if (onDispose != null) {
+      return _removeMapList(_onDisposeListMap, retainKey, onUpdateData);
+    }
+    return false;
+  }
 
   Mutation<R> retain<R>(
     String retainKey, {
@@ -398,6 +502,20 @@ class MutationCache {
           onClear: onClear,
           onCreate: onCreate,
           onDispose: onDispose);
+      _onCreateListMap[retainKey]?.forEach((e) => e(mutation!));
+      _onUpdateDataListMap[retainKey]
+          ?.forEach((e) => mutation!.addOnUpdateDataCallback(e));
+      _onUpdateErrorListMap[retainKey]
+          ?.forEach((e) => mutation!.addOnUpdateErrorCallback(e));
+      _onUpdateInitializingListMap[retainKey]
+          ?.forEach((e) => mutation!.addOnUpdateInitializingCallback(e));
+      _onUpdateLoadingListMap[retainKey]
+          ?.forEach((e) => mutation!.addOnUpdateLoadingCallback(e));
+      _onClearListMap[retainKey]
+          ?.forEach((e) => mutation!.addOnClearCallback(e));
+      _onDisposeListMap[retainKey]
+          ?.forEach((e) => mutation!.addOnDisposeCallback(e));
+
       _data[retainKey] = mutation;
     }
     if (isStatic) {
@@ -423,6 +541,18 @@ class MutationCache {
     _retainCount.remove(retainKey);
     final mutation = _data.remove(retainKey);
     mutation?.dispose();
+    _onUpdateDataListMap[retainKey]
+        ?.forEach((e) => mutation!.removeOnUpdateDataCallback(e));
+    _onUpdateErrorListMap[retainKey]
+        ?.forEach((e) => mutation!.removeOnUpdateErrorCallback(e));
+    _onUpdateInitializingListMap[retainKey]
+        ?.forEach((e) => mutation!.removeOnUpdateInitializingCallback(e));
+    _onUpdateLoadingListMap[retainKey]
+        ?.forEach((e) => mutation!.removeOnUpdateLoadingCallback(e));
+    _onClearListMap[retainKey]
+        ?.forEach((e) => mutation!.removeOnClearCallback(e));
+    _onDisposeListMap[retainKey]
+        ?.forEach((e) => mutation!.removeOnDisposeCallback(e));
     return true;
   }
 }

@@ -18,3 +18,8 @@
 ## 0.0.8
 
 * add onCreate, onDispose
+
+## 0.0.9
+
+* add cache observe, onCreate fix
+
