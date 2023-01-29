@@ -14,3 +14,7 @@
 ## 0.0.6
 
 * bug fix
+
+## 0.0.8
+
+* add onCreate, onDispose

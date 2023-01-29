@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
+typedef MutationOnDisposeCallback<R> = void Function(Mutation<R> mutation);
+typedef MutationOnCreateCallback<R> = void Function(Mutation<R> mutation);
 typedef MutationOnUpdateDataCallback<R> = void Function(R? data);
 typedef MutationOnUpdateErrorCallback = void Function(Object error);
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
@@ -40,6 +42,8 @@ class Mutation<R> extends ChangeNotifier {
   final List<MutationOnUpdateLoadingCallback> _onUpdateLoadingList = [];
   final List<MutationOnClearCallback> _onClearList = [];
 
+  final List<MutationOnDisposeCallback<R>> _onDisposeList = [];
+
   Mutation(
       {R? initialValue,
       MutationGetInitialValueCallback<R>? getInitialValue,
@@ -47,7 +51,9 @@ class Mutation<R> extends ChangeNotifier {
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateLoadingCallback? onUpdateLoading,
-      MutationOnClearCallback? onClear}) {
+      MutationOnClearCallback? onClear,
+      MutationOnCreateCallback<R>? onCreate,
+      MutationOnDisposeCallback<R>? onDispose}) {
     if (onUpdateData != null) {
       _onUpdateDataList.add(onUpdateData);
     }
@@ -63,12 +69,28 @@ class Mutation<R> extends ChangeNotifier {
     if (onClear != null) {
       _onClearList.add(onClear);
     }
+    if (onDispose != null) {
+      _onDisposeList.add(onDispose);
+    }
     if (initialValue != null) {
       _setData(initialValue);
     }
     if (getInitialValue != null) {
       _initMutate(getInitialValue());
     }
+    if (onCreate != null) {
+      onCreate(this);
+    }
+  }
+
+  Mutation<R> addOnDisposeCallback(MutationOnDisposeCallback<R> callback) {
+    _onDisposeList.add(callback);
+    return this;
+  }
+
+  Mutation<R> removeOnReleaseCallback(MutationOnDisposeCallback<R> callback) {
+    _onDisposeList.remove(callback);
+    return this;
   }
 
   Mutation<R> addOnUpdateDataCallback(
@@ -247,6 +269,12 @@ class Mutation<R> extends ChangeNotifier {
 
   @override
   void dispose() {
+    if (_disposed) {
+      throw const MutationException("mutation disposed");
+    }
+    for (var element in _onDisposeList) {
+      element(this);
+    }
     dataList = [];
     _error = null;
     _loading = false;
@@ -254,6 +282,7 @@ class Mutation<R> extends ChangeNotifier {
     _onUpdateErrorList.clear();
     _onUpdateLoadingList.clear();
     _onClearList.clear();
+    _onDisposeList.clear();
     _disposed = true;
     super.dispose();
   }
@@ -353,6 +382,8 @@ class MutationCache {
     MutationOnUpdateInitializingCallback? onUpdateInitializing,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnClearCallback? onClear,
+    MutationOnCreateCallback<R>? onCreate,
+    MutationOnDisposeCallback<R>? onDispose,
     bool isStatic = false,
   }) {
     var mutation = _data[retainKey] as Mutation<R>?;
@@ -364,7 +395,9 @@ class MutationCache {
           onUpdateError: onUpdateError,
           onUpdateInitializing: onUpdateInitializing,
           onUpdateLoading: onUpdateLoading,
-          onClear: onClear);
+          onClear: onClear,
+          onCreate: onCreate,
+          onDispose: onDispose);
       _data[retainKey] = mutation;
     }
     if (isStatic) {
@@ -402,6 +435,8 @@ Mutation<R> useMutation<R>({
   MutationOnUpdateInitializingCallback? onUpdateInitializing,
   MutationOnUpdateLoadingCallback? onUpdateLoading,
   MutationOnClearCallback? onClear,
+  MutationOnCreateCallback<R>? onCreate,
+  MutationOnDisposeCallback<R>? onDispose,
   String? retainKey,
   bool isStatic = false,
 }) {
@@ -418,6 +453,8 @@ Mutation<R> useMutation<R>({
         onUpdateInitializing: onUpdateInitializing,
         onUpdateLoading: onUpdateLoading,
         onClear: onClear,
+        onCreate: onCreate,
+        onDispose: onDispose,
         isStatic: isStatic);
   }, [key]);
   useEffect(() {
