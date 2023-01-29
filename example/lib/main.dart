@@ -2,6 +2,7 @@ import 'package:example/async_get/async_get_page.dart';
 import 'package:example/async_get2/async_get2_page.dart';
 import 'package:example/caching/caching_page.dart';
 import 'package:example/global_state/global_state_page.dart';
+import 'package:example/mutation_link/mutation_link_page.dart';
 import 'package:example/pagination/pagination_page.dart';
 import 'package:flutter/material.dart';
 
@@ -82,7 +83,12 @@ class MyHomePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).push(AsyncGet2Page.createRoute());
                 },
-                child: const Text("async get2"))
+                child: const Text("async get2")),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(MutationLinkPage.createRoute());
+                },
+                child: const Text("mutation link"))
           ],
         ),
       ),

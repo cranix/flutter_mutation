@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 typedef MutationOnDisposeCallback<R> = void Function(Mutation<R> mutation);
-typedef MutationOnCreateCallback<R> = void Function()? Function(Mutation<R> mutation);
+typedef MutationOnCreateCallback<R> = void Function()? Function(
+    Mutation<R> mutation);
 typedef MutationOnUpdateDataCallback<R> = void Function(R? data);
 typedef MutationOnUpdateErrorCallback = void Function(Object error);
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
@@ -82,7 +83,7 @@ class Mutation<R> extends ChangeNotifier {
       final res = onCreate(this);
       if (res != null) {
         _onDisposeList.add((mutation) {
-           res();
+          res();
         });
       }
     }
@@ -460,7 +461,8 @@ class MutationCache {
       return _removeMapList(_onUpdateErrorListMap, retainKey, onUpdateData);
     }
     if (onUpdateInitializing != null) {
-      return _removeMapList(_onUpdateInitializingListMap, retainKey, onUpdateData);
+      return _removeMapList(
+          _onUpdateInitializingListMap, retainKey, onUpdateData);
     }
     if (onUpdateLoading != null) {
       return _removeMapList(_onUpdateLoadingListMap, retainKey, onUpdateData);
@@ -475,6 +477,30 @@ class MutationCache {
       return _removeMapList(_onDisposeListMap, retainKey, onUpdateData);
     }
     return false;
+  }
+
+  _onUpdateData(String retainKey, dynamic data) {
+    _onUpdateDataListMap[retainKey]?.forEach((e) => e(data));
+  }
+
+  _onUpdateError(String retainKey, Object error) {
+    _onUpdateErrorListMap[retainKey]?.forEach((e) => e(error));
+  }
+
+  _onUpdateInitializing(String retainKey, bool initializing) {
+    _onUpdateInitializingListMap[retainKey]?.forEach((e) => e(initializing));
+  }
+
+  _onUpdateLoading(String retainKey, bool loading) {
+    _onUpdateLoadingListMap[retainKey]?.forEach((e) => e(loading));
+  }
+
+  _onClear(String retainKey) {
+    _onClearListMap[retainKey]?.forEach((e) => e());
+  }
+
+  _onDispose(String retainKey, Mutation mutation) {
+    _onDisposeListMap[retainKey]?.forEach((e) => e(mutation));
   }
 
   Mutation<R> retain<R>(
@@ -502,19 +528,25 @@ class MutationCache {
           onClear: onClear,
           onCreate: onCreate,
           onDispose: onDispose);
-      _onCreateListMap[retainKey]?.forEach((e) => e(mutation!));
-      _onUpdateDataListMap[retainKey]
-          ?.forEach((e) => mutation!.addOnUpdateDataCallback(e));
-      _onUpdateErrorListMap[retainKey]
-          ?.forEach((e) => mutation!.addOnUpdateErrorCallback(e));
-      _onUpdateInitializingListMap[retainKey]
-          ?.forEach((e) => mutation!.addOnUpdateInitializingCallback(e));
-      _onUpdateLoadingListMap[retainKey]
-          ?.forEach((e) => mutation!.addOnUpdateLoadingCallback(e));
-      _onClearListMap[retainKey]
-          ?.forEach((e) => mutation!.addOnClearCallback(e));
-      _onDisposeListMap[retainKey]
-          ?.forEach((e) => mutation!.addOnDisposeCallback(e));
+      _onCreateListMap[retainKey]?.forEach((e) => e(mutation));
+      mutation.addOnUpdateDataCallback((data) {
+        _onUpdateData(retainKey, data);
+      });
+      mutation.addOnUpdateErrorCallback((error) {
+        _onUpdateError(retainKey, error);
+      });
+      mutation.addOnUpdateInitializingCallback((initializing) {
+        _onUpdateInitializing(retainKey, initializing);
+      });
+      mutation.addOnUpdateLoadingCallback((loading) {
+        _onUpdateLoading(retainKey, loading);
+      });
+      mutation.addOnClearCallback(() {
+        _onClear(retainKey);
+      });
+      mutation.addOnDisposeCallback((mutation) {
+        _onDispose(retainKey, mutation);
+      });
 
       _data[retainKey] = mutation;
     }
@@ -541,18 +573,6 @@ class MutationCache {
     _retainCount.remove(retainKey);
     final mutation = _data.remove(retainKey);
     mutation?.dispose();
-    _onUpdateDataListMap[retainKey]
-        ?.forEach((e) => mutation!.removeOnUpdateDataCallback(e));
-    _onUpdateErrorListMap[retainKey]
-        ?.forEach((e) => mutation!.removeOnUpdateErrorCallback(e));
-    _onUpdateInitializingListMap[retainKey]
-        ?.forEach((e) => mutation!.removeOnUpdateInitializingCallback(e));
-    _onUpdateLoadingListMap[retainKey]
-        ?.forEach((e) => mutation!.removeOnUpdateLoadingCallback(e));
-    _onClearListMap[retainKey]
-        ?.forEach((e) => mutation!.removeOnClearCallback(e));
-    _onDisposeListMap[retainKey]
-        ?.forEach((e) => mutation!.removeOnDisposeCallback(e));
     return true;
   }
 }

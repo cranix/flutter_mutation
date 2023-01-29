@@ -23,3 +23,6 @@
 
 * add cache observe, onCreate fix
 
+## 0.0.9+1
+
+* bug fix
