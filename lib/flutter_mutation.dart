@@ -371,22 +371,7 @@ bool useMutationLoading<R>(Mutation<R> mutation) {
   return state.value;
 }
 
-List _getOrNewMapList(Map<String, List> map, String key) {
-  var list = map[key];
-  if (list == null) {
-    list = [];
-    map[key] = list;
-  }
-  return list;
-}
-
-bool _removeMapList(Map<String, List> map, String key, dynamic value) {
-  final list = map[key];
-  if (list == null) {
-    return false;
-  }
-  return list.remove(value);
-}
+enum EventKey { DATA, ERROR, INITIALIZING, LOADING, CLEAR, CREATE, DISPOSE }
 
 class MutationCache {
   static final instance = MutationCache._();
@@ -394,18 +379,42 @@ class MutationCache {
   final _retainCount = <String, int>{};
   final _staticKeys = <String>{};
 
-  final _onUpdateDataListMap = <String, List>{};
-  final _onUpdateErrorListMap = <String, List>{};
-  final _onUpdateInitializingListMap = <String, List>{};
-  final _onUpdateLoadingListMap = <String, List>{};
-  final _onClearListMap = <String, List>{};
-  final _onCreateListMap = <String, List>{};
-  final _onDisposeListMap = <String, List>{};
+  final _onEventMapListMap = <EventKey, Map<String, List>>{};
 
   MutationCache._();
 
+  List _getOrNewMapList(EventKey event, String key) {
+    var map = _onEventMapListMap[event];
+    if (map == null) {
+      map = <String, List>{};
+      _onEventMapListMap[event] = map;
+    }
+    var list = map[key];
+    if (list == null) {
+      list = [];
+      map[key] = list;
+    }
+    return list;
+  }
+
+  bool _removeMapList(EventKey event, String key, dynamic value) {
+    final map = _onEventMapListMap[event];
+    if (map == null) {
+      return false;
+    }
+    final list = map[key];
+    if (list == null) {
+      return false;
+    }
+    final res = list.remove(value);
+    if (list.isEmpty) {
+      map.remove(event);
+    }
+    return res;
+  }
+
   void addObserve<R>(
-    String retainKey, {
+    String key, {
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializingCallback? onUpdateInitializing,
@@ -415,37 +424,37 @@ class MutationCache {
     MutationOnDisposeCallback<R>? onDispose,
   }) {
     if (onUpdateData != null) {
-      final list = _getOrNewMapList(_onUpdateDataListMap, retainKey);
+      final list = _getOrNewMapList(EventKey.DATA, key);
       list.add(onUpdateData);
     }
     if (onUpdateError != null) {
-      final list = _getOrNewMapList(_onUpdateErrorListMap, retainKey);
+      final list = _getOrNewMapList(EventKey.ERROR, key);
       list.add(onUpdateError);
     }
     if (onUpdateInitializing != null) {
-      final list = _getOrNewMapList(_onUpdateInitializingListMap, retainKey);
+      final list = _getOrNewMapList(EventKey.INITIALIZING, key);
       list.add(onUpdateInitializing);
     }
     if (onUpdateLoading != null) {
-      final list = _getOrNewMapList(_onUpdateLoadingListMap, retainKey);
+      final list = _getOrNewMapList(EventKey.LOADING, key);
       list.add(onUpdateLoading);
     }
     if (onClear != null) {
-      final list = _getOrNewMapList(_onClearListMap, retainKey);
+      final list = _getOrNewMapList(EventKey.CLEAR, key);
       list.add(onClear);
     }
     if (onCreate != null) {
-      final list = _getOrNewMapList(_onCreateListMap, retainKey);
+      final list = _getOrNewMapList(EventKey.CREATE, key);
       list.add(onCreate);
     }
     if (onDispose != null) {
-      final list = _getOrNewMapList(_onDisposeListMap, retainKey);
+      final list = _getOrNewMapList(EventKey.DISPOSE, key);
       list.add(onDispose);
     }
   }
 
   bool removeObserve<R>(
-    String retainKey, {
+    String key, {
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializingCallback? onUpdateInitializing,
@@ -455,67 +464,68 @@ class MutationCache {
     MutationOnDisposeCallback<R>? onDispose,
   }) {
     if (onUpdateData != null) {
-      return _removeMapList(_onUpdateDataListMap, retainKey, onUpdateData);
+      return _removeMapList(EventKey.DATA, key, onUpdateData);
     }
     if (onUpdateError != null) {
-      return _removeMapList(_onUpdateErrorListMap, retainKey, onUpdateData);
+      return _removeMapList(EventKey.ERROR, key, onUpdateData);
     }
     if (onUpdateInitializing != null) {
-      return _removeMapList(
-          _onUpdateInitializingListMap, retainKey, onUpdateData);
+      return _removeMapList(EventKey.INITIALIZING, key, onUpdateData);
     }
     if (onUpdateLoading != null) {
-      return _removeMapList(_onUpdateLoadingListMap, retainKey, onUpdateData);
+      return _removeMapList(EventKey.LOADING, key, onUpdateData);
     }
     if (onClear != null) {
-      return _removeMapList(_onClearListMap, retainKey, onUpdateData);
+      return _removeMapList(EventKey.CLEAR, key, onUpdateData);
     }
     if (onCreate != null) {
-      return _removeMapList(_onCreateListMap, retainKey, onUpdateData);
+      return _removeMapList(EventKey.CREATE, key, onUpdateData);
     }
     if (onDispose != null) {
-      return _removeMapList(_onDisposeListMap, retainKey, onUpdateData);
+      return _removeMapList(EventKey.DISPOSE, key, onUpdateData);
     }
     return false;
   }
 
   _onUpdateData(String retainKey, dynamic data) {
-    _onUpdateDataListMap[retainKey]?.forEach((e) => e(data));
+    _onEventMapListMap[EventKey.DATA]?[retainKey]?.forEach((e) => e(data));
   }
 
   _onUpdateError(String retainKey, Object error) {
-    _onUpdateErrorListMap[retainKey]?.forEach((e) => e(error));
+    _onEventMapListMap[EventKey.ERROR]?[retainKey]?.forEach((e) => e(error));
   }
 
   _onUpdateInitializing(String retainKey, bool initializing) {
-    _onUpdateInitializingListMap[retainKey]?.forEach((e) => e(initializing));
+    _onEventMapListMap[EventKey.INITIALIZING]?[retainKey]
+        ?.forEach((e) => e(initializing));
   }
 
   _onUpdateLoading(String retainKey, bool loading) {
-    _onUpdateLoadingListMap[retainKey]?.forEach((e) => e(loading));
+    _onEventMapListMap[EventKey.LOADING]?[retainKey]
+        ?.forEach((e) => e(loading));
   }
 
   _onClear(String retainKey) {
-    _onClearListMap[retainKey]?.forEach((e) => e());
+    _onEventMapListMap[EventKey.CLEAR]?[retainKey]?.forEach((e) => e());
   }
 
   _onDispose(String retainKey, Mutation mutation) {
-    _onDisposeListMap[retainKey]?.forEach((e) => e(mutation));
+    _onEventMapListMap[EventKey.DISPOSE]?[retainKey]
+        ?.forEach((e) => e(mutation));
   }
 
-  Mutation<R> retain<R>(
-    String retainKey, {
-    R? initialValue,
-    MutationGetInitialValueCallback<R>? getInitialValue,
-    MutationOnUpdateDataCallback<R>? onUpdateData,
-    MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializingCallback? onUpdateInitializing,
-    MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
-    bool isStatic = false,
-  }) {
+  Mutation<R> retain<R>(String retainKey,
+      {R? initialValue,
+      MutationGetInitialValueCallback<R>? getInitialValue,
+      MutationOnUpdateDataCallback<R>? onUpdateData,
+      MutationOnUpdateErrorCallback? onUpdateError,
+      MutationOnUpdateInitializingCallback? onUpdateInitializing,
+      MutationOnUpdateLoadingCallback? onUpdateLoading,
+      MutationOnClearCallback? onClear,
+      MutationOnCreateCallback<R>? onCreate,
+      MutationOnDisposeCallback<R>? onDispose,
+      bool isStatic = false,
+      List<String> observeKeys = const []}) {
     var mutation = _data[retainKey] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(
@@ -528,24 +538,46 @@ class MutationCache {
           onClear: onClear,
           onCreate: onCreate,
           onDispose: onDispose);
-      _onCreateListMap[retainKey]?.forEach((e) => e(mutation));
+      _onEventMapListMap[EventKey.CREATE]?[retainKey]
+          ?.forEach((e) => e(mutation));
+      for (var key in observeKeys) {
+        _onEventMapListMap[EventKey.CREATE]?[key]?.forEach((e) => e(mutation));
+      }
       mutation.addOnUpdateDataCallback((data) {
         _onUpdateData(retainKey, data);
+        for (var key in observeKeys) {
+          _onUpdateData(key, data);
+        }
       });
       mutation.addOnUpdateErrorCallback((error) {
         _onUpdateError(retainKey, error);
+        for (var key in observeKeys) {
+          _onUpdateError(key, error);
+        }
       });
       mutation.addOnUpdateInitializingCallback((initializing) {
         _onUpdateInitializing(retainKey, initializing);
+        for (var key in observeKeys) {
+          _onUpdateInitializing(key, initializing);
+        }
       });
       mutation.addOnUpdateLoadingCallback((loading) {
         _onUpdateLoading(retainKey, loading);
+        for (var key in observeKeys) {
+          _onUpdateLoading(key, loading);
+        }
       });
       mutation.addOnClearCallback(() {
         _onClear(retainKey);
+        for (var key in observeKeys) {
+          _onClear(key);
+        }
       });
       mutation.addOnDisposeCallback((mutation) {
         _onDispose(retainKey, mutation);
+        for (var key in observeKeys) {
+          _onDispose(key, mutation);
+        }
       });
 
       _data[retainKey] = mutation;
@@ -577,19 +609,19 @@ class MutationCache {
   }
 }
 
-Mutation<R> useMutation<R>({
-  R? initialValue,
-  MutationGetInitialValueCallback<R>? getInitialValue,
-  MutationOnUpdateDataCallback<R>? onUpdateData,
-  MutationOnUpdateErrorCallback? onUpdateError,
-  MutationOnUpdateInitializingCallback? onUpdateInitializing,
-  MutationOnUpdateLoadingCallback? onUpdateLoading,
-  MutationOnClearCallback? onClear,
-  MutationOnCreateCallback<R>? onCreate,
-  MutationOnDisposeCallback<R>? onDispose,
-  String? retainKey,
-  bool isStatic = false,
-}) {
+Mutation<R> useMutation<R>(
+    {R? initialValue,
+    MutationGetInitialValueCallback<R>? getInitialValue,
+    MutationOnUpdateDataCallback<R>? onUpdateData,
+    MutationOnUpdateErrorCallback? onUpdateError,
+    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateLoadingCallback? onUpdateLoading,
+    MutationOnClearCallback? onClear,
+    MutationOnCreateCallback<R>? onCreate,
+    MutationOnDisposeCallback<R>? onDispose,
+    String? retainKey,
+    bool isStatic = false,
+    List<String> observerKeys = const []}) {
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
@@ -605,7 +637,8 @@ Mutation<R> useMutation<R>({
         onClear: onClear,
         onCreate: onCreate,
         onDispose: onDispose,
-        isStatic: isStatic);
+        isStatic: isStatic,
+        observeKeys: observerKeys);
   }, [key]);
   useEffect(() {
     return () {

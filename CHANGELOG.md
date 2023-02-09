@@ -26,3 +26,7 @@
 ## 0.0.9+1
 
 * bug fix
+
+## 0.1.0
+
+* add observe keys
