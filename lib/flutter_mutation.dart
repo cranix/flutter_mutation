@@ -525,7 +525,8 @@ class MutationCache {
       MutationOnCreateCallback<R>? onCreate,
       MutationOnDisposeCallback<R>? onDispose,
       bool isStatic = false,
-      List<String> observeKeys = const []}) {
+      List<String> observeKeys = const [],
+      bool isErrorDispose = false}) {
     var mutation = _data[retainKey] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(
@@ -553,6 +554,12 @@ class MutationCache {
         _onUpdateError(retainKey, error);
         for (var key in observeKeys) {
           _onUpdateError(key, error);
+        }
+        if (isErrorDispose) {
+          _staticKeys.remove(retainKey);
+          _retainCount.remove(retainKey);
+          _data.remove(retainKey);
+          mutation!.dispose();
         }
       });
       mutation.addOnUpdateInitializingCallback((initializing) {
@@ -621,7 +628,8 @@ Mutation<R> useMutation<R>(
     MutationOnDisposeCallback<R>? onDispose,
     String? retainKey,
     bool isStatic = false,
-    List<String> observerKeys = const []}) {
+    List<String> observerKeys = const [],
+    bool isErrorDispose = false}) {
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
@@ -638,7 +646,8 @@ Mutation<R> useMutation<R>(
         onCreate: onCreate,
         onDispose: onDispose,
         isStatic: isStatic,
-        observeKeys: observerKeys);
+        observeKeys: observerKeys,
+        isErrorDispose: isErrorDispose);
   }, [key]);
   useEffect(() {
     return () {

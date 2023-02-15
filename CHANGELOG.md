@@ -30,3 +30,7 @@
 ## 0.1.0
 
 * add observe keys
+
+## 0.1.2
+
+* add is error dispose
