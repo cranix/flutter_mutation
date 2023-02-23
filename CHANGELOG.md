@@ -31,6 +31,11 @@
 
 * add observe keys
 
-## 0.1.2
+## 0.1.2 
 
 * add is error dispose
+
+## 0.1.4
+
+* add initIfError, disposeIfError
+* remove isErrorDispose

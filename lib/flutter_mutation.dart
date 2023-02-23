@@ -8,7 +8,7 @@ typedef MutationOnDisposeCallback<R> = void Function(Mutation<R> mutation);
 typedef MutationOnCreateCallback<R> = void Function()? Function(
     Mutation<R> mutation);
 typedef MutationOnUpdateDataCallback<R> = void Function(R? data);
-typedef MutationOnUpdateErrorCallback = void Function(Object error);
+typedef MutationOnUpdateErrorCallback = void Function(Object? error);
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
 typedef MutationOnUpdateInitializingCallback = void Function(bool initializing);
 typedef MutationOnClearCallback = void Function();
@@ -27,6 +27,8 @@ class Mutation<R> extends ChangeNotifier {
   bool get isLoading => _loading;
 
   bool get hasData => data != null;
+
+  bool get hasError => error != null;
 
   bool get isEmpty => data == null;
 
@@ -184,7 +186,9 @@ class Mutation<R> extends ChangeNotifier {
         element(isInitializing);
       }
     }
-    notifyListeners();
+    if (!_updateError(null)) {
+      notifyListeners();
+    }
   }
 
   void _updateLoading(bool loading) {
@@ -204,12 +208,16 @@ class Mutation<R> extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _updateError(Object error) {
+  bool _updateError(Object? error) {
+    if (_error == error) {
+      return false;
+    }
     _error = error;
     for (var element in _onUpdateErrorList) {
       element(error);
     }
     notifyListeners();
+    return true;
   }
 
   _initMutate(Future<R?> future) async {
@@ -314,7 +322,7 @@ class MutationException implements Exception {
 Object? useMutationError<R>(Mutation<R> mutation) {
   final state = useState<Object?>(mutation.error);
   useEffect(() {
-    void listener(Object error) {
+    void listener(Object? error) {
       state.value = error;
     }
 
@@ -491,7 +499,7 @@ class MutationCache {
     _onEventMapListMap[EventKey.DATA]?[retainKey]?.forEach((e) => e(data));
   }
 
-  _onUpdateError(String retainKey, Object error) {
+  _onUpdateError(String retainKey, Object? error) {
     _onEventMapListMap[EventKey.ERROR]?[retainKey]?.forEach((e) => e(error));
   }
 
@@ -526,7 +534,8 @@ class MutationCache {
       MutationOnDisposeCallback<R>? onDispose,
       bool isStatic = false,
       List<String> observeKeys = const [],
-      bool isErrorDispose = false}) {
+      bool disposeIfError = false,
+      bool initIfError = false}) {
     var mutation = _data[retainKey] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(
@@ -555,7 +564,7 @@ class MutationCache {
         for (var key in observeKeys) {
           _onUpdateError(key, error);
         }
-        if (isErrorDispose) {
+        if (disposeIfError) {
           _staticKeys.remove(retainKey);
           _retainCount.remove(retainKey);
           _data.remove(retainKey);
@@ -588,6 +597,15 @@ class MutationCache {
       });
 
       _data[retainKey] = mutation;
+    } else {
+      if (initIfError && mutation.hasError && !mutation.isLoading) {
+        if (initialValue != null) {
+          mutation._setData(initialValue);
+        }
+        if (getInitialValue != null) {
+          mutation._initMutate(getInitialValue());
+        }
+      }
     }
     if (isStatic) {
       _staticKeys.add(retainKey);
@@ -629,7 +647,8 @@ Mutation<R> useMutation<R>(
     String? retainKey,
     bool isStatic = false,
     List<String> observerKeys = const [],
-    bool isErrorDispose = false}) {
+    bool disposeIfError = false,
+    bool initIfError = false}) {
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
@@ -647,7 +666,8 @@ Mutation<R> useMutation<R>(
         onDispose: onDispose,
         isStatic: isStatic,
         observeKeys: observerKeys,
-        isErrorDispose: isErrorDispose);
+        disposeIfError: disposeIfError,
+        initIfError: initIfError);
   }, [key]);
   useEffect(() {
     return () {
