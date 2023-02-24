@@ -260,6 +260,23 @@ class Mutation<R> extends ChangeNotifier {
     _updateData(data, append: append);
   }
 
+  void clearError() {
+    if (_disposed) {
+      throw const MutationException("mutation disposed");
+    }
+    bool beforeInitializing = isInitializing;
+    _error = null;
+    for (var element in _onUpdateErrorList) {
+      element(_error);
+    }
+    if (beforeInitializing != isInitializing) {
+      for (var element in _onUpdateInitializingList) {
+        element(isInitializing);
+      }
+    }
+    notifyListeners();
+  }
+
   void clear() {
     if (_disposed) {
       throw const MutationException("mutation disposed");
@@ -272,6 +289,9 @@ class Mutation<R> extends ChangeNotifier {
     }
     for (var element in _onUpdateDataList) {
       element(data);
+    }
+    for (var element in _onUpdateErrorList) {
+      element(_error);
     }
     if (beforeInitializing != isInitializing) {
       for (var element in _onUpdateInitializingList) {
@@ -534,8 +554,7 @@ class MutationCache {
       MutationOnDisposeCallback<R>? onDispose,
       bool isStatic = false,
       List<String> observeKeys = const [],
-      bool disposeIfError = false,
-      bool initIfError = false}) {
+      bool resetIfError = false}) {
     var mutation = _data[retainKey] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(
@@ -563,12 +582,6 @@ class MutationCache {
         _onUpdateError(retainKey, error);
         for (var key in observeKeys) {
           _onUpdateError(key, error);
-        }
-        if (disposeIfError) {
-          _staticKeys.remove(retainKey);
-          _retainCount.remove(retainKey);
-          _data.remove(retainKey);
-          mutation!.dispose();
         }
       });
       mutation.addOnUpdateInitializingCallback((initializing) {
@@ -598,12 +611,12 @@ class MutationCache {
 
       _data[retainKey] = mutation;
     } else {
-      if (initIfError && mutation.hasError && !mutation.isLoading) {
+      if (resetIfError && mutation.hasError && !mutation.isLoading) {
         if (initialValue != null) {
-          mutation._setData(initialValue);
+          mutation.update(initialValue);
         }
         if (getInitialValue != null) {
-          mutation._initMutate(getInitialValue());
+          getInitialValue().mutate(mutation);
         }
       }
     }
@@ -647,8 +660,7 @@ Mutation<R> useMutation<R>(
     String? retainKey,
     bool isStatic = false,
     List<String> observerKeys = const [],
-    bool disposeIfError = false,
-    bool initIfError = false}) {
+    bool resetIfError = false}) {
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
@@ -666,8 +678,7 @@ Mutation<R> useMutation<R>(
         onDispose: onDispose,
         isStatic: isStatic,
         observeKeys: observerKeys,
-        disposeIfError: disposeIfError,
-        initIfError: initIfError);
+        resetIfError: resetIfError);
   }, [key]);
   useEffect(() {
     return () {

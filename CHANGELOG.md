@@ -35,7 +35,6 @@
 
 * add is error dispose
 
-## 0.1.4
-
-* add initIfError, disposeIfError
+## 0.1.5
+* add resetIfError
 * remove isErrorDispose
