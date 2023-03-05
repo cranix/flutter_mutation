@@ -38,3 +38,6 @@
 ## 0.1.5
 * add resetIfError
 * remove isErrorDispose
+
+## 0.1.6
+* observerKeys -> observeKeys

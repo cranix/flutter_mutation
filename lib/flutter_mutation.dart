@@ -659,7 +659,7 @@ Mutation<R> useMutation<R>(
     MutationOnDisposeCallback<R>? onDispose,
     String? retainKey,
     bool isStatic = false,
-    List<String> observerKeys = const [],
+    List<String> observeKeys = const [],
     bool resetIfError = false}) {
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
@@ -677,7 +677,7 @@ Mutation<R> useMutation<R>(
         onCreate: onCreate,
         onDispose: onDispose,
         isStatic: isStatic,
-        observeKeys: observerKeys,
+        observeKeys: observeKeys,
         resetIfError: resetIfError);
   }, [key]);
   useEffect(() {
