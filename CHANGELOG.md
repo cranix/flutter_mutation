@@ -41,3 +41,6 @@
 
 ## 0.1.6
 * observerKeys -> observeKeys
+
+## 0.1.7
+* future -> futureOr

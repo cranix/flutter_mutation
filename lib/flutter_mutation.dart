@@ -1,5 +1,7 @@
 library flutter_mutation;
 
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -12,7 +14,7 @@ typedef MutationOnUpdateErrorCallback = void Function(Object? error);
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
 typedef MutationOnUpdateInitializingCallback = void Function(bool initializing);
 typedef MutationOnClearCallback = void Function();
-typedef MutationGetInitialValueCallback<R> = Future<R?> Function();
+typedef MutationGetInitialValueCallback<R> = FutureOr<R?> Function();
 
 class Mutation<R> extends ChangeNotifier {
   Object? _error;
@@ -220,7 +222,7 @@ class Mutation<R> extends ChangeNotifier {
     return true;
   }
 
-  _initMutate(Future<R?> future) async {
+  _initMutate(FutureOr<R?> future) async {
     try {
       _updateLoading(true);
       R? value = await future;
@@ -237,6 +239,9 @@ class Mutation<R> extends ChangeNotifier {
   }
 
   Future<R> _mutate(Future<R> future, {bool append = false}) async {
+    return _mutateOr(future, append: append);
+  }
+  FutureOr<R> _mutateOr(FutureOr<R> future, {bool append = false}) async {
     if (_disposed) {
       throw const MutationException("mutation disposed");
     }
@@ -322,9 +327,14 @@ class Mutation<R> extends ChangeNotifier {
   }
 }
 
-extension MutationsExtension<R> on Future<R> {
+extension MutationsFutureExtension<R> on Future<R> {
   Future<R> mutate(Mutation<R> mutation, {bool append = false}) {
     return mutation._mutate(this, append: append);
+  }
+}
+extension MutationsFutureOrExtension<R> on FutureOr<R> {
+  FutureOr<R> mutate(Mutation<R> mutation, {bool append = false}) {
+    return mutation._mutateOr(this, append: append);
   }
 }
 
