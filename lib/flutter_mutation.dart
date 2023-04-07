@@ -40,6 +40,8 @@ class Mutation<R> extends ChangeNotifier {
 
   bool get isDisposed => _disposed;
 
+  bool _enabled;
+
   final List<MutationOnUpdateDataCallback<R>> _onUpdateDataList = [];
   final List<MutationOnUpdateErrorCallback> _onUpdateErrorList = [];
   final List<MutationOnUpdateInitializingCallback> _onUpdateInitializingList =
@@ -58,7 +60,9 @@ class Mutation<R> extends ChangeNotifier {
       MutationOnUpdateLoadingCallback? onUpdateLoading,
       MutationOnClearCallback? onClear,
       MutationOnCreateCallback<R>? onCreate,
-      MutationOnDisposeCallback<R>? onDispose}) {
+      MutationOnDisposeCallback<R>? onDispose,
+      bool enabled = true})
+      : _enabled = enabled {
     if (onUpdateData != null) {
       _onUpdateDataList.add(onUpdateData);
     }
@@ -77,11 +81,13 @@ class Mutation<R> extends ChangeNotifier {
     if (onDispose != null) {
       _onDisposeList.add(onDispose);
     }
-    if (initialValue != null) {
-      _setData(initialValue);
-    }
-    if (getInitialValue != null) {
-      _initMutate(getInitialValue());
+    if (enabled) {
+      if (initialValue != null) {
+        _setData(initialValue);
+      }
+      if (getInitialValue != null) {
+        _initMutate(getInitialValue());
+      }
     }
     if (onCreate != null) {
       final res = onCreate(this);
@@ -91,6 +97,24 @@ class Mutation<R> extends ChangeNotifier {
         });
       }
     }
+  }
+
+  _updateEnabledInitial(bool enabled, R? initialValue,
+      MutationGetInitialValueCallback<R>? getInitialValue) {
+    if (_enabled == enabled) {
+      return false;
+    }
+    _enabled = enabled;
+    if (enabled) {
+      if (initialValue != null) {
+        update(initialValue);
+      }
+      if (getInitialValue != null) {
+        getInitialValue().mutate(this);
+      }
+      return true;
+    }
+    return false;
   }
 
   Mutation<R> addOnDisposeCallback(MutationOnDisposeCallback<R> callback) {
@@ -241,6 +265,7 @@ class Mutation<R> extends ChangeNotifier {
   Future<R> _mutate(Future<R> future, {bool append = false}) async {
     return _mutateOr(future, append: append);
   }
+
   FutureOr<R> _mutateOr(FutureOr<R> future, {bool append = false}) async {
     if (_disposed) {
       throw const MutationException("mutation disposed");
@@ -332,6 +357,7 @@ extension MutationsFutureExtension<R> on Future<R> {
     return mutation._mutate(this, append: append);
   }
 }
+
 extension MutationsFutureOrExtension<R> on FutureOr<R> {
   FutureOr<R> mutate(Mutation<R> mutation, {bool append = false}) {
     return mutation._mutateOr(this, append: append);
@@ -564,7 +590,8 @@ class MutationCache {
       MutationOnDisposeCallback<R>? onDispose,
       bool isStatic = false,
       List<String> observeKeys = const [],
-      bool resetIfError = false}) {
+      bool resetIfError = false,
+      bool enabled = true}) {
     var mutation = _data[retainKey] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(
@@ -576,7 +603,8 @@ class MutationCache {
           onUpdateLoading: onUpdateLoading,
           onClear: onClear,
           onCreate: onCreate,
-          onDispose: onDispose);
+          onDispose: onDispose,
+          enabled: enabled);
       _onEventMapListMap[EventKey.CREATE]?[retainKey]
           ?.forEach((e) => e(mutation));
       for (var key in observeKeys) {
@@ -618,10 +646,15 @@ class MutationCache {
           _onDispose(key, mutation);
         }
       });
-
       _data[retainKey] = mutation;
     } else {
-      if (resetIfError && mutation.hasError && !mutation.isLoading) {
+      final updated = mutation._updateEnabledInitial(
+          enabled, initialValue, getInitialValue);
+      if (resetIfError &&
+          mutation.hasError &&
+          !mutation.isLoading &&
+          enabled &&
+          !updated) {
         if (initialValue != null) {
           mutation.update(initialValue);
         }
@@ -670,7 +703,8 @@ Mutation<R> useMutation<R>(
     String? retainKey,
     bool isStatic = false,
     List<String> observeKeys = const [],
-    bool resetIfError = false}) {
+    bool resetIfError = false,
+    bool enabled = true}) {
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
@@ -688,8 +722,10 @@ Mutation<R> useMutation<R>(
         onDispose: onDispose,
         isStatic: isStatic,
         observeKeys: observeKeys,
-        resetIfError: resetIfError);
+        resetIfError: resetIfError,
+        enabled: enabled);
   }, [key]);
+  mutation._updateEnabledInitial(enabled, initialValue, getInitialValue);
   useEffect(() {
     return () {
       MutationCache.instance.release(key);

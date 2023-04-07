@@ -44,3 +44,6 @@
 
 ## 0.1.7
 * future -> futureOr
+
+## 0.1.8
+* add enabled
