@@ -47,3 +47,6 @@
 
 ## 0.1.8
 * add enabled
+
+## 0.1.9
+* onUpdateData, onUpdateError modify

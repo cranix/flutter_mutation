@@ -9,8 +9,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 typedef MutationOnDisposeCallback<R> = void Function(Mutation<R> mutation);
 typedef MutationOnCreateCallback<R> = void Function()? Function(
     Mutation<R> mutation);
-typedef MutationOnUpdateDataCallback<R> = void Function(R? data);
-typedef MutationOnUpdateErrorCallback = void Function(Object? error);
+typedef MutationOnUpdateDataCallback<R> = void Function(R data);
+typedef MutationOnUpdateErrorCallback = void Function(Object error);
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
 typedef MutationOnUpdateInitializingCallback = void Function(bool initializing);
 typedef MutationOnClearCallback = void Function();
@@ -198,7 +198,7 @@ class Mutation<R> extends ChangeNotifier {
     }
   }
 
-  void _updateData(R? data, {bool append = false}) {
+  void _updateData(R data, {bool append = false}) {
     if (!append && data == this.data) {
       return;
     }
@@ -212,7 +212,7 @@ class Mutation<R> extends ChangeNotifier {
         element(isInitializing);
       }
     }
-    if (!_updateError(null)) {
+    if (!_clearError()) {
       notifyListeners();
     }
   }
@@ -234,7 +234,16 @@ class Mutation<R> extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool _updateError(Object? error) {
+  bool _clearError() {
+    if (_error == null) {
+      return false;
+    }
+    _error = null;
+    notifyListeners();
+    return true;
+  }
+
+  bool _updateError(Object error) {
     if (_error == error) {
       return false;
     }
@@ -296,9 +305,6 @@ class Mutation<R> extends ChangeNotifier {
     }
     bool beforeInitializing = isInitializing;
     _error = null;
-    for (var element in _onUpdateErrorList) {
-      element(_error);
-    }
     if (beforeInitializing != isInitializing) {
       for (var element in _onUpdateInitializingList) {
         element(isInitializing);
@@ -316,12 +322,6 @@ class Mutation<R> extends ChangeNotifier {
     _error = null;
     for (var element in _onClearList) {
       element();
-    }
-    for (var element in _onUpdateDataList) {
-      element(data);
-    }
-    for (var element in _onUpdateErrorList) {
-      element(_error);
     }
     if (beforeInitializing != isInitializing) {
       for (var element in _onUpdateInitializingList) {
