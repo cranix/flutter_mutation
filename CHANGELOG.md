@@ -50,3 +50,6 @@
 
 ## 0.1.9
 * onUpdateData, onUpdateError modify
+
+## 0.2.0
+* update version
