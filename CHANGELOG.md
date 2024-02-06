@@ -53,3 +53,6 @@
 
 ## 0.2.0
 * update version
+
+## 0.2.5
+* refactoring

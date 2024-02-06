@@ -9,8 +9,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 typedef MutationOnDisposeCallback<R> = void Function(Mutation<R> mutation);
 typedef MutationOnCreateCallback<R> = void Function()? Function(
     Mutation<R> mutation);
-typedef MutationOnUpdateDataCallback<R> = void Function(R data);
-typedef MutationOnUpdateErrorCallback = void Function(Object error);
+typedef MutationOnUpdateDataCallback<R> = void Function(R? data, {R? before});
+typedef MutationOnUpdateErrorCallback = void Function(Object? error,
+    {Object? before});
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
 typedef MutationOnUpdateInitializingCallback = void Function(bool initializing);
 typedef MutationOnClearCallback = void Function();
@@ -20,11 +21,13 @@ class Mutation<R> extends ChangeNotifier {
   Object? _error;
   bool _loading = false;
 
-  List<R> dataList = [];
+  final bool autoInitialize;
+
+  List<R> _dataList = [];
 
   Object? get error => _error;
 
-  R? get data => dataList.isEmpty ? null : dataList.last;
+  R? get data => _dataList.isEmpty ? null : _dataList.last;
 
   bool get isLoading => _loading;
 
@@ -34,13 +37,15 @@ class Mutation<R> extends ChangeNotifier {
 
   bool get isEmpty => data == null;
 
-  bool get isInitializing => _loading && isEmpty;
+  bool get isInitializing => _loading && !_initialized;
+
+  bool get isInitilized => _initialized;
 
   bool _disposed = false;
 
   bool get isDisposed => _disposed;
 
-  bool _enabled;
+  bool _initialized = false;
 
   final List<MutationOnUpdateDataCallback<R>> _onUpdateDataList = [];
   final List<MutationOnUpdateErrorCallback> _onUpdateErrorList = [];
@@ -50,6 +55,8 @@ class Mutation<R> extends ChangeNotifier {
   final List<MutationOnClearCallback> _onClearList = [];
 
   final List<MutationOnDisposeCallback<R>> _onDisposeList = [];
+
+  MutationGetInitialValueCallback<R>? _getInitialValue;
 
   Mutation(
       {R? initialValue,
@@ -61,8 +68,7 @@ class Mutation<R> extends ChangeNotifier {
       MutationOnClearCallback? onClear,
       MutationOnCreateCallback<R>? onCreate,
       MutationOnDisposeCallback<R>? onDispose,
-      bool enabled = true})
-      : _enabled = enabled {
+      this.autoInitialize = true}) {
     if (onUpdateData != null) {
       _onUpdateDataList.add(onUpdateData);
     }
@@ -81,14 +87,11 @@ class Mutation<R> extends ChangeNotifier {
     if (onDispose != null) {
       _onDisposeList.add(onDispose);
     }
-    if (enabled) {
-      if (initialValue != null) {
-        _setData(initialValue);
-      }
-      if (getInitialValue != null) {
-        _initMutate(getInitialValue());
-      }
+    if (initialValue != null) {
+      _setData(initialValue);
     }
+    _getInitialValue = getInitialValue;
+
     if (onCreate != null) {
       final res = onCreate(this);
       if (res != null) {
@@ -99,26 +102,45 @@ class Mutation<R> extends ChangeNotifier {
     }
   }
 
-  _updateEnabledInitial(bool enabled, R? initialValue,
-      MutationGetInitialValueCallback<R>? getInitialValue) {
-    if (_enabled == enabled) {
+  initialize() {
+    if (_initialized) {
       return false;
     }
-    _enabled = enabled;
-    if (enabled) {
-      if (initialValue != null) {
-        update(initialValue);
-      }
-      if (getInitialValue != null) {
-        getInitialValue().mutate(this);
-      }
-      return true;
+    _initialized = true;
+    _runInitializeFuture();
+    return true;
+  }
+
+  _runInitializeFuture() async {
+    if (_getInitialValue == null) {
+      return;
     }
-    return false;
+    try {
+      for (var element in _onUpdateInitializingList) {
+        element(true);
+      }
+      _updateLoading(true);
+      R? value = await _getInitialValue!();
+      if (value == null) {
+        return;
+      }
+      _updateData(value);
+    } catch (e) {
+      _updateError(e);
+      rethrow;
+    } finally {
+      _updateLoading(false);
+      for (var element in _onUpdateInitializingList) {
+        element(false);
+      }
+    }
   }
 
   Mutation<R> addOnDisposeCallback(MutationOnDisposeCallback<R> callback) {
     _onDisposeList.add(callback);
+    if (autoInitialize) {
+      initialize();
+    }
     return this;
   }
 
@@ -130,6 +152,9 @@ class Mutation<R> extends ChangeNotifier {
   Mutation<R> addOnUpdateDataCallback(
       MutationOnUpdateDataCallback<R> callback) {
     _onUpdateDataList.add(callback);
+    if (autoInitialize) {
+      initialize();
+    }
     return this;
   }
 
@@ -141,6 +166,9 @@ class Mutation<R> extends ChangeNotifier {
 
   Mutation<R> addOnUpdateErrorCallback(MutationOnUpdateErrorCallback callback) {
     _onUpdateErrorList.add(callback);
+    if (autoInitialize) {
+      initialize();
+    }
     return this;
   }
 
@@ -153,6 +181,9 @@ class Mutation<R> extends ChangeNotifier {
   Mutation<R> addOnUpdateLoadingCallback(
       MutationOnUpdateLoadingCallback callback) {
     _onUpdateLoadingList.add(callback);
+    if (autoInitialize) {
+      initialize();
+    }
     return this;
   }
 
@@ -165,6 +196,9 @@ class Mutation<R> extends ChangeNotifier {
   Mutation<R> addOnUpdateInitializingCallback(
       MutationOnUpdateInitializingCallback callback) {
     _onUpdateInitializingList.add(callback);
+    if (autoInitialize) {
+      initialize();
+    }
     return this;
   }
 
@@ -176,6 +210,9 @@ class Mutation<R> extends ChangeNotifier {
 
   Mutation<R> addOnClearCallback(MutationOnClearCallback callback) {
     _onClearList.add(callback);
+    if (autoInitialize) {
+      initialize();
+    }
     return this;
   }
 
@@ -187,102 +224,63 @@ class Mutation<R> extends ChangeNotifier {
   void _setData(R? data, {bool append = false}) {
     if (data != null) {
       if (append) {
-        dataList += [data];
+        _dataList += [data];
       } else {
-        dataList = [data];
+        _dataList = [data];
       }
     } else {
-      if (!append) {
-        dataList = [];
-      }
+      _dataList = [];
     }
   }
 
-  void _updateData(R data, {bool append = false}) {
+  bool _updateData(R? data, {bool append = false}) {
     if (!append && data == this.data) {
-      return;
+      return false;
     }
-    bool beforeInitializing = isInitializing;
+    _initialized = true;
+    R? before = this.data;
     _setData(data, append: append);
     for (var element in _onUpdateDataList) {
-      element(data);
+      element(data, before: before);
     }
-    if (beforeInitializing != isInitializing) {
-      for (var element in _onUpdateInitializingList) {
-        element(isInitializing);
-      }
-    }
-    if (!_clearError()) {
-      notifyListeners();
-    }
+    notifyListeners();
+    return true;
   }
 
-  void _updateLoading(bool loading) {
+  bool _updateLoading(bool loading) {
     if (_loading == loading) {
-      return;
+      return false;
     }
-    bool beforeInitializing = isInitializing;
     _loading = loading;
     for (var element in _onUpdateLoadingList) {
       element(loading);
     }
-    if (beforeInitializing != isInitializing) {
-      for (var element in _onUpdateInitializingList) {
-        element(isInitializing);
-      }
-    }
-    notifyListeners();
-  }
-
-  bool _clearError() {
-    if (_error == null) {
-      return false;
-    }
-    _error = null;
     notifyListeners();
     return true;
   }
 
-  bool _updateError(Object error) {
+  bool _updateError(Object? error) {
     if (_error == error) {
       return false;
     }
+    Object? before = _error;
     _error = error;
     for (var element in _onUpdateErrorList) {
-      element(error);
+      element(error, before: before);
     }
     notifyListeners();
     return true;
   }
 
-  _initMutate(FutureOr<R?> future) async {
-    try {
-      _updateLoading(true);
-      R? value = await future;
-      if (value == null) {
-        return;
-      }
-      _updateData(value);
-    } catch (e) {
-      _updateError(e);
-      rethrow;
-    } finally {
-      _updateLoading(false);
-    }
-  }
-
-  Future<R> _mutate(Future<R> future, {bool append = false}) async {
-    return _mutateOr(future, append: append);
-  }
-
-  FutureOr<R> _mutateOr(FutureOr<R> future, {bool append = false}) async {
+  Future<R> mutate(FutureOr<R> future, {bool append = false}) async {
     if (_disposed) {
       throw const MutationException("mutation disposed");
     }
+    _initialized = true;
     try {
       _updateLoading(true);
       final data = await future;
-      update(data, append: append);
+      _updateData(data, append: append);
       return data;
     } catch (e) {
       _updateError(e);
@@ -292,7 +290,7 @@ class Mutation<R> extends ChangeNotifier {
     }
   }
 
-  void update(R data, {bool append = false}) {
+  void update(R? data, {bool append = false}) {
     if (_disposed) {
       throw const MutationException("mutation disposed");
     }
@@ -303,32 +301,26 @@ class Mutation<R> extends ChangeNotifier {
     if (_disposed) {
       throw const MutationException("mutation disposed");
     }
-    bool beforeInitializing = isInitializing;
-    _error = null;
-    if (beforeInitializing != isInitializing) {
-      for (var element in _onUpdateInitializingList) {
-        element(isInitializing);
-      }
+    _updateError(null);
+  }
+
+  bool _updateClear() {
+    if (!hasData && !hasError && !isLoading) {
+      return false;
     }
-    notifyListeners();
+    _updateData(null);
+    _updateError(null);
+    for (var element in _onClearList) {
+      element();
+    }
+    return true;
   }
 
   void clear() {
     if (_disposed) {
       throw const MutationException("mutation disposed");
     }
-    bool beforeInitializing = isInitializing;
-    dataList = [];
-    _error = null;
-    for (var element in _onClearList) {
-      element();
-    }
-    if (beforeInitializing != isInitializing) {
-      for (var element in _onUpdateInitializingList) {
-        element(isInitializing);
-      }
-    }
-    notifyListeners();
+    _updateClear();
   }
 
   @override
@@ -339,7 +331,7 @@ class Mutation<R> extends ChangeNotifier {
     for (var element in _onDisposeList) {
       element(this);
     }
-    dataList = [];
+    _dataList = [];
     _error = null;
     _loading = false;
     _onUpdateDataList.clear();
@@ -348,19 +340,16 @@ class Mutation<R> extends ChangeNotifier {
     _onClearList.clear();
     _onDisposeList.clear();
     _disposed = true;
+    _initialized = false;
+    _getInitialValue = null;
     super.dispose();
   }
 }
 
-extension MutationsFutureExtension<R> on Future<R> {
-  Future<R> mutate(Mutation<R> mutation, {bool append = false}) {
-    return mutation._mutate(this, append: append);
-  }
-}
 
 extension MutationsFutureOrExtension<R> on FutureOr<R> {
   FutureOr<R> mutate(Mutation<R> mutation, {bool append = false}) {
-    return mutation._mutateOr(this, append: append);
+    return mutation.mutate(this, append: append);
   }
 }
 
@@ -378,7 +367,7 @@ class MutationException implements Exception {
 Object? useMutationError<R>(Mutation<R> mutation) {
   final state = useState<Object?>(mutation.error);
   useEffect(() {
-    void listener(Object? error) {
+    void listener(Object? error, {Object? before}) {
       state.value = error;
     }
 
@@ -391,10 +380,10 @@ Object? useMutationError<R>(Mutation<R> mutation) {
 }
 
 List<R> useMutationDataList<R>(Mutation<R> mutation) {
-  final state = useState<List<R>>(mutation.dataList);
+  final state = useState<List<R>>(mutation._dataList);
   useEffect(() {
-    void listener(R? data) {
-      state.value = mutation.dataList;
+    void listener(R? data, {R? before}) {
+      state.value = mutation._dataList;
     }
 
     mutation.addOnUpdateDataCallback(listener);
@@ -408,7 +397,7 @@ List<R> useMutationDataList<R>(Mutation<R> mutation) {
 R? useMutationData<R>(Mutation<R> mutation) {
   final state = useState<R?>(mutation.data);
   useEffect(() {
-    void listener(R? data) {
+    void listener(R? data, {R? before}) {
       state.value = data;
     }
 
@@ -590,8 +579,7 @@ class MutationCache {
       MutationOnDisposeCallback<R>? onDispose,
       bool isStatic = false,
       List<String> observeKeys = const [],
-      bool resetIfError = false,
-      bool enabled = true}) {
+      bool autoInitialize = true}) {
     var mutation = _data[retainKey] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(
@@ -604,19 +592,19 @@ class MutationCache {
           onClear: onClear,
           onCreate: onCreate,
           onDispose: onDispose,
-          enabled: enabled);
+          autoInitialize: autoInitialize);
       _onEventMapListMap[EventKey.CREATE]?[retainKey]
           ?.forEach((e) => e(mutation));
       for (var key in observeKeys) {
         _onEventMapListMap[EventKey.CREATE]?[key]?.forEach((e) => e(mutation));
       }
-      mutation.addOnUpdateDataCallback((data) {
+      mutation.addOnUpdateDataCallback((data, {before}) {
         _onUpdateData(retainKey, data);
         for (var key in observeKeys) {
           _onUpdateData(key, data);
         }
       });
-      mutation.addOnUpdateErrorCallback((error) {
+      mutation.addOnUpdateErrorCallback((error, {before}) {
         _onUpdateError(retainKey, error);
         for (var key in observeKeys) {
           _onUpdateError(key, error);
@@ -647,21 +635,6 @@ class MutationCache {
         }
       });
       _data[retainKey] = mutation;
-    } else {
-      final updated = mutation._updateEnabledInitial(
-          enabled, initialValue, getInitialValue);
-      if (resetIfError &&
-          mutation.hasError &&
-          !mutation.isLoading &&
-          enabled &&
-          !updated) {
-        if (initialValue != null) {
-          mutation.update(initialValue);
-        }
-        if (getInitialValue != null) {
-          getInitialValue().mutate(mutation);
-        }
-      }
     }
     if (isStatic) {
       _staticKeys.add(retainKey);
@@ -703,8 +676,7 @@ Mutation<R> useMutation<R>(
     String? retainKey,
     bool isStatic = false,
     List<String> observeKeys = const [],
-    bool resetIfError = false,
-    bool enabled = true}) {
+    bool enable = true}) {
   if (isStatic && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
@@ -722,10 +694,16 @@ Mutation<R> useMutation<R>(
         onDispose: onDispose,
         isStatic: isStatic,
         observeKeys: observeKeys,
-        resetIfError: resetIfError,
-        enabled: enabled);
+        autoInitialize: enable);
   }, [key]);
-  mutation._updateEnabledInitial(enabled, initialValue, getInitialValue);
+
+  useEffect(() {
+    if (!enable) {
+      return;
+    }
+    mutation.initialize();
+  }, [enable, mutation]);
+
   useEffect(() {
     return () {
       MutationCache.instance.release(key);

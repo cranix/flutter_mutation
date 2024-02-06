@@ -5,7 +5,7 @@ class GlobalStateMutations {
     getInitialValue: () async {
       // load authToken
     },
-    onUpdateData: (data) {
+    onUpdateData: (data, {before}) {
       // save authToken
     },
     onClear: () {

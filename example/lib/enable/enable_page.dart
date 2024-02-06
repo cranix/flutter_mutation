@@ -1,23 +1,22 @@
-import 'package:example/async_get2/async_get2_api.dart';
-import 'package:example/async_get2/async_get2_widget.dart';
-import 'package:example/async_get2/async_get3_widget.dart';
+import 'package:example/enable/enable_api.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
 
-class AsyncGet2Page extends HookWidget {
-  const AsyncGet2Page({super.key});
+class EnablePage extends HookWidget {
+  const EnablePage({super.key});
+
+
   static MaterialPageRoute createRoute() {
     return MaterialPageRoute(builder: (context) {
-      return const AsyncGet2Page();
+      return const EnablePage();
     });
   }
-
   @override
   Widget build(BuildContext context) {
-    final mutation = useMutation(
-      getInitialValue: AsyncGet2Api.get
-    );
+    final enable = useState(false);
+    final mutation = useMutation(getInitialValue: EnableApi.get, enable: enable.value);
     final data = useMutationData(mutation);
     return Scaffold(
       appBar: AppBar(
@@ -25,9 +24,10 @@ class AsyncGet2Page extends HookWidget {
       ),
       body: Column(
         children: [
-          Text(data ?? "loading"),
-          const AsyncGet2Widget(),
-          const AsyncGet3Widget(),
+          Text("data:$data"),
+          ElevatedButton(onPressed: () {
+            enable.value = true;
+          }, child: const Text("click"))
         ],
       ),
     );

@@ -18,7 +18,7 @@ class MutationLinkPage extends HookWidget {
     final mutation1 = useMutation<String>(retainKey: "mutation_link_1");
 
     final mutation2 = useMutation<String>(onCreate: (mutation) {
-      onUpdate(data) {
+      onUpdate(data, {before}) {
         MutationLinkApi.get2().mutate(mutation);
       }
 
@@ -36,7 +36,7 @@ class MutationLinkPage extends HookWidget {
     }, []);
     return Scaffold(
       appBar: AppBar(
-        title: const Text("caching page"),
+        title: const Text("mutation link"),
       ),
       body: Column(
         children: [

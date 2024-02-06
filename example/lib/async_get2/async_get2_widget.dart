@@ -12,7 +12,7 @@ class AsyncGet2Widget extends HookWidget {
     final mutation = useMutation(
         getInitialValue: AsyncGet2Api.get2
     );
-    useListenable(mutation);
-    return Text(mutation.data ?? "loading");
+    final data = useMutationData(mutation);
+    return Text(data ?? "loading");
   }
 }
