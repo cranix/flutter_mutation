@@ -346,6 +346,11 @@ class Mutation<R> extends ChangeNotifier {
   }
 }
 
+extension MutationsFutureExtension<R> on Future<R> {
+  Future<R> mutate(Mutation<R> mutation, {bool append = false}) {
+    return mutation.mutate(this, append: append);
+  }
+}
 
 extension MutationsFutureOrExtension<R> on FutureOr<R> {
   FutureOr<R> mutate(Mutation<R> mutation, {bool append = false}) {
