@@ -16,10 +16,11 @@ class GlobalStatePage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final onPressLogin = useCallback(() {
-      GlobalStateApi.postLogin().mutate(GlobalStateMutations.authToken.key);
+      GlobalStateApi.postLogin()
+          .mutate(GlobalStateMutations.instance.authTokenKey);
     }, []);
     final onPressClear = useCallback(() {
-      GlobalStateMutations.authToken.clear();
+      GlobalStateMutations.instance.authTokenKey.clear();
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +32,7 @@ class GlobalStatePage extends HookWidget {
           children: [
             HookBuilder(builder: (context) {
               final loading = useMutationLoading(
-                  key: GlobalStateMutations.authToken.key);
+                  key: GlobalStateMutations.instance.authTokenKey);
               return Visibility(
                   visible: loading, child: const CircularProgressIndicator());
             }),
@@ -40,7 +41,7 @@ class GlobalStatePage extends HookWidget {
               children: [
                 HookBuilder(builder: (context) {
                   final data = useMutationData(
-                      key: GlobalStateMutations.authToken.key);
+                      key: GlobalStateMutations.instance.authTokenKey);
                   return Text("authToken:$data");
                 }),
                 TextButton(onPressed: onPressLogin, child: const Text("login")),

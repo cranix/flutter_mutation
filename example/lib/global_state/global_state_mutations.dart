@@ -1,15 +1,18 @@
 import 'package:flutter_mutation/flutter_mutation.dart';
 
 class GlobalStateMutations {
-  static final authToken = getMutation<String>(
-    getInitialValue: () async {
-      // load authToken
-    },
-    onUpdateData: (data, {before}) {
-      // save authToken
-    },
-    onClear: () {
-      // remove authToken
-    }
-  );
+  static final instance = GlobalStateMutations._internal();
+  final authTokenKey = MutationKey<String>();
+
+  GlobalStateMutations._internal() {
+    observeMutation(
+      authTokenKey,
+      onUpdateData: (data, {before}) {
+        print("onUpdateData:$data, $before");
+      },
+      onClear: () {
+        print("onClear");
+      },
+    );
+  }
 }

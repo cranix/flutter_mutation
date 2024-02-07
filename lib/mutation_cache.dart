@@ -118,12 +118,12 @@ class MutationCache {
     return false;
   }
 
-  _onUpdateData(MutationKey retainKey, dynamic data) {
-    _onEventMapListMap[EventKey.DATA]?[retainKey]?.forEach((e) => e(data));
+  _onUpdateData(MutationKey retainKey, dynamic data, {dynamic before}) {
+    _onEventMapListMap[EventKey.DATA]?[retainKey]?.forEach((e) => e(data, before: before));
   }
 
-  _onUpdateError(MutationKey retainKey, Object? error) {
-    _onEventMapListMap[EventKey.ERROR]?[retainKey]?.forEach((e) => e(error));
+  _onUpdateError(MutationKey retainKey, Object? error, {dynamic before}) {
+    _onEventMapListMap[EventKey.ERROR]?[retainKey]?.forEach((e) => e(error, before: before));
   }
 
   _onUpdateInitializing(MutationKey retainKey, bool initializing) {
@@ -177,13 +177,13 @@ class MutationCache {
             ?.forEach((e) => e(mutation));
       }
       mutation.addOnUpdateDataCallback((data, {before}) {
-        _onUpdateData(key, data);
+        _onUpdateData(key, data, before: before);
         for (var observeKey in observeKeys) {
           _onUpdateData(observeKey, data);
         }
       });
       mutation.addOnUpdateErrorCallback((error, {before}) {
-        _onUpdateError(key, error);
+        _onUpdateError(key, error, before: before);
         for (var observeKey in observeKeys) {
           _onUpdateError(observeKey, error);
         }
