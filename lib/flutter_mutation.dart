@@ -582,7 +582,7 @@ class MutationCache {
       MutationOnClearCallback? onClear,
       MutationOnCreateCallback<R>? onCreate,
       MutationOnDisposeCallback<R>? onDispose,
-      bool isStatic = false,
+      bool static = false,
       List<String> observeKeys = const [],
       bool autoInitialize = true}) {
     var mutation = _data[retainKey] as Mutation<R>?;
@@ -640,10 +640,11 @@ class MutationCache {
         }
       });
       _data[retainKey] = mutation;
+      if (static) {
+        _staticKeys.add(retainKey);
+      }
     }
-    if (isStatic) {
-      _staticKeys.add(retainKey);
-    } else {
+    if (!static) {
       _retainCount[retainKey] = (_retainCount[retainKey] ?? 0) + 1;
     }
     return mutation;
@@ -679,10 +680,10 @@ Mutation<R> useMutation<R>(
     MutationOnCreateCallback<R>? onCreate,
     MutationOnDisposeCallback<R>? onDispose,
     String? retainKey,
-    bool isStatic = false,
+    bool static = false,
     List<String> observeKeys = const [],
     bool enable = true}) {
-  if (isStatic && retainKey == null) {
+  if (static && retainKey == null) {
     throw const MutationException("static must have retainKey");
   }
   String key = useMemoized(() => retainKey ?? UniqueKey().toString());
@@ -697,7 +698,7 @@ Mutation<R> useMutation<R>(
         onClear: onClear,
         onCreate: onCreate,
         onDispose: onDispose,
-        isStatic: isStatic,
+        static: static,
         observeKeys: observeKeys,
         autoInitialize: enable);
   }, [key]);
