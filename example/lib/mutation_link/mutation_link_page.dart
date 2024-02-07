@@ -15,24 +15,22 @@ class MutationLinkPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation1 = useMutation<String>(retainKey: "mutation_link_1");
-
+    final mutation1 = useMutation<String>();
     final mutation2 = useMutation<String>(onCreate: (mutation) {
       onUpdate(data, {before}) {
-        MutationLinkApi.get2().mutate(mutation);
+        MutationLinkApi.get2().mutate(mutation.key);
       }
 
-      MutationCache.instance
-          .addObserve("mutation_link_1", onUpdateData: onUpdate);
+      observeMutation(mutation1.key, onUpdateData: onUpdate);
       return () {
-        final res = MutationCache.instance
-            .removeObserve("mutation_link_1", onUpdateData: onUpdate);
+        final res =
+            removeObserveMutation(mutation1.key, onUpdateData: onUpdate);
         print("onDispose:$res");
       };
     });
 
     final onPressed = useCallback(() {
-      MutationLinkApi.get1().mutate(mutation1);
+      MutationLinkApi.get1().mutate(mutation1.key);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -41,11 +39,11 @@ class MutationLinkPage extends HookWidget {
       body: Column(
         children: [
           HookBuilder(builder: (context) {
-            final data = useMutationData(mutation1);
+            final data = useMutationData(key: mutation1.key);
             return Text(data ?? "-");
           }),
           HookBuilder(builder: (context) {
-            final data = useMutationData(mutation2);
+            final data = useMutationData(key: mutation2.key);
             return Text(data ?? "-");
           }),
           ElevatedButton(onPressed: onPressed, child: const Text("click"))

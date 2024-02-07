@@ -15,10 +15,9 @@ class AsyncGet2Page extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation = useMutation(
-      getInitialValue: AsyncGet2Api.get
+    final data = useMutationData(
+        getInitialValue: AsyncGet2Api.get
     );
-    final data = useMutationData(mutation);
     return Scaffold(
       appBar: AppBar(
         title: const Text("async_get2"),

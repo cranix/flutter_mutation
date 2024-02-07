@@ -14,10 +14,9 @@ class AsyncGetPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation = useMutation<int>();
+    final mutationKey = useMutationKey<int>();
     final onPressRequest = useCallback(() {
-      AsyncGetApi.get()
-          .mutate(mutation);
+      AsyncGetApi.get().mutate(mutationKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -28,7 +27,7 @@ class AsyncGetPage extends HookWidget {
           alignment: Alignment.center,
           children: [
             HookBuilder(builder: (context) {
-              final loading = useMutationLoading(mutation);
+              final loading = useMutationLoading(key: mutationKey);
               return Visibility(
                   visible: loading, child: const CircularProgressIndicator());
             }),
@@ -36,7 +35,7 @@ class AsyncGetPage extends HookWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 HookBuilder(builder: (context) {
-                  final data = useMutationData(mutation);
+                  final data = useMutationData(key: mutationKey);
                   return Text("result:$data");
                 }),
                 TextButton(

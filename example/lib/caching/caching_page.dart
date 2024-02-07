@@ -16,9 +16,8 @@ class CachingPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation = useCachingMutation();
     final onPressRefresh = useCallback(() async {
-      await CachingApi.get().mutate(mutation);
+      await CachingApi.get().mutate(cacheKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -28,14 +27,17 @@ class CachingPage extends HookWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            HookBuilder(
+                key: UniqueKey(),
+                builder: (context) {
+                  final loading = useMutationLoading(
+                      key: cacheKey);
+                  return loading
+                      ? const Text("Loading...")
+                      : const Text("complete");
+                }),
             HookBuilder(builder: (context) {
-              final loading = useMutationLoading(mutation);
-              return loading
-                  ? const Text("Loading...")
-                  : const Text("complete");
-            }),
-            HookBuilder(builder: (context) {
-              final data = useMutationData(mutation);
+              final data = useMutationData(key: cacheKey, getInitialValue: CachingApi.get);
               return Text("title:${data?.title}");
             }),
             TextButton(onPressed: onPressRefresh, child: const Text("refresh")),

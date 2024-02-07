@@ -14,24 +14,24 @@ class PaginationPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation =
-        useMutation<PaginationResponse>(getInitialValue: PaginationApi.getList);
+    final mutationKey = useMutationKey<PaginationResponse>();
     final onPressMore = useCallback(() {
-      PaginationApi.getList(mutation.data?.nextPageKey)
-          .mutate(mutation, append: true);
+      PaginationApi.getList(getMutationData(mutationKey)?.nextPageKey)
+          .mutate(mutationKey, append: true);
     }, []);
     final onRefresh = useCallback(() async {
-      return PaginationApi.getList().mutate(mutation);
+      return PaginationApi.getList().mutate(mutationKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
-        title: const Text("caching page"),
+        title: const Text("pagination page"),
       ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: HookBuilder(builder: (context) {
-          final dataList = useMutationDataList(mutation);
-          final loading = useMutationLoading(mutation);
+          final dataList = useMutationDataList(key: mutationKey);
+          final loading = useMutationLoading(
+              key: mutationKey, getInitialValue: PaginationApi.getList);
           final list = useMemoized(
               () => dataList.expand((element) => element.list).toList(),
               [dataList]);
