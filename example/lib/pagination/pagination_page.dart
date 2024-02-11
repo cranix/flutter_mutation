@@ -16,7 +16,7 @@ class PaginationPage extends HookWidget {
   Widget build(BuildContext context) {
     final mutationKey = useMutationKey<PaginationResponse>();
     final onPressMore = useCallback(() {
-      PaginationApi.getList(getMutationData(mutationKey)?.nextPageKey)
+      PaginationApi.getList(mutationKey.data?.nextPageKey)
           .mutate(mutationKey, append: true);
     }, []);
     final onRefresh = useCallback(() async {

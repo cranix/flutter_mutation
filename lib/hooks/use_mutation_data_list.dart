@@ -4,7 +4,8 @@ import 'package:flutter_mutation/mutation_key.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 List<R> useMutationDataList<R>(
-    {R? initialValue,
+    {MutationKey<R>? key,
+    R? initialValue,
     MutationGetInitialValueCallback<R>? getInitialValue,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
@@ -13,11 +14,10 @@ List<R> useMutationDataList<R>(
     MutationOnClearCallback? onClear,
     MutationOnCreateCallback<R>? onCreate,
     MutationOnDisposeCallback<R>? onDispose,
-    MutationKey<R>? key,
-    bool static = false,
     List<MutationKey<R>> observeKeys = const [],
     bool enable = true}) {
   final mutation = useMutation(
+      key: key,
       initialValue: initialValue,
       getInitialValue: getInitialValue,
       onUpdateData: onUpdateData,
@@ -27,9 +27,7 @@ List<R> useMutationDataList<R>(
       onClear: onClear,
       onCreate: onCreate,
       onDispose: onDispose,
-      static: static,
-      observeKeys: observeKeys,
-      key: key);
+      observeKeys: observeKeys);
   final state = useState<List<R>>(mutation.dataList);
   useEffect(() {
     void listener(R? data, {R? before}) {

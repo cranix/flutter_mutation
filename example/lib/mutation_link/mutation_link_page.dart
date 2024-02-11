@@ -1,6 +1,5 @@
 import 'package:example/mutation_link/mutation_link_api.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
 
@@ -15,22 +14,24 @@ class MutationLinkPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation1 = useMutation<String>();
-    final mutation2 = useMutation<String>(onCreate: (mutation) {
-      onUpdate(data, {before}) {
-        MutationLinkApi.get2().mutate(mutation.key);
-      }
+    final mutationKey1 = useMutationKey<String>();
+    final mutationKey2 = useMutationKey<String>();
+    useEffect(() {
+      mutationKey2.addObserve(onCreate: (mutation) {
+        onUpdate(data, {before}) {
+          MutationLinkApi.get2().mutate(mutation.key);
+        }
 
-      observeMutation(mutation1.key, onUpdateData: onUpdate);
-      return () {
-        final res =
-            removeObserveMutation(mutation1.key, onUpdateData: onUpdate);
-        print("onDispose:$res");
-      };
-    });
+        mutationKey1.addObserve(onUpdateData: onUpdate);
+        return () {
+          final res = mutationKey1.removeObserve(onUpdateData: onUpdate);
+          print("onDispose:$res");
+        };
+      });
+    }, [mutationKey2]);
 
     final onPressed = useCallback(() {
-      MutationLinkApi.get1().mutate(mutation1.key);
+      MutationLinkApi.get1().mutate(mutationKey1);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -39,11 +40,11 @@ class MutationLinkPage extends HookWidget {
       body: Column(
         children: [
           HookBuilder(builder: (context) {
-            final data = useMutationData(key: mutation1.key);
+            final data = useMutationData(key: mutationKey1);
             return Text(data ?? "-");
           }),
           HookBuilder(builder: (context) {
-            final data = useMutationData(key: mutation2.key);
+            final data = useMutationData(key: mutationKey2);
             return Text(data ?? "-");
           }),
           ElevatedButton(onPressed: onPressed, child: const Text("click"))

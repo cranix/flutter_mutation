@@ -119,11 +119,13 @@ class MutationCache {
   }
 
   _onUpdateData(MutationKey retainKey, dynamic data, {dynamic before}) {
-    _onEventMapListMap[EventKey.DATA]?[retainKey]?.forEach((e) => e(data, before: before));
+    _onEventMapListMap[EventKey.DATA]?[retainKey]
+        ?.forEach((e) => e(data, before: before));
   }
 
   _onUpdateError(MutationKey retainKey, Object? error, {dynamic before}) {
-    _onEventMapListMap[EventKey.ERROR]?[retainKey]?.forEach((e) => e(error, before: before));
+    _onEventMapListMap[EventKey.ERROR]?[retainKey]
+        ?.forEach((e) => e(error, before: before));
   }
 
   _onUpdateInitializing(MutationKey retainKey, bool initializing) {
@@ -155,22 +157,19 @@ class MutationCache {
       MutationOnClearCallback? onClear,
       MutationOnCreateCallback<R>? onCreate,
       MutationOnDisposeCallback<R>? onDispose,
-      bool static = false,
       List<MutationKey<R>> observeKeys = const []}) {
     var mutation = _data[key] as Mutation<R>?;
     if (mutation == null) {
-      mutation = Mutation<R>(
-        key,
-        initialValue: initialValue,
-        getInitialValue: getInitialValue,
-        onUpdateData: onUpdateData,
-        onUpdateError: onUpdateError,
-        onUpdateInitializing: onUpdateInitializing,
-        onUpdateLoading: onUpdateLoading,
-        onClear: onClear,
-        onCreate: onCreate,
-        onDispose: onDispose
-      );
+      mutation = Mutation<R>(key,
+          initialValue: initialValue,
+          getInitialValue: getInitialValue,
+          onUpdateData: onUpdateData,
+          onUpdateError: onUpdateError,
+          onUpdateInitializing: onUpdateInitializing,
+          onUpdateLoading: onUpdateLoading,
+          onClear: onClear,
+          onCreate: onCreate,
+          onDispose: onDispose);
       _onEventMapListMap[EventKey.CREATE]?[key]?.forEach((e) => e(mutation));
       for (var observeKey in observeKeys) {
         _onEventMapListMap[EventKey.CREATE]?[observeKey]
@@ -213,11 +212,11 @@ class MutationCache {
         }
       });
       _data[key] = mutation;
-      if (static) {
+      if (key.static) {
         _staticKeys.add(key);
       }
     }
-    if (!static) {
+    if (!key.static) {
       _retainCount[key] = (_retainCount[key] ?? 0) + 1;
     }
     return mutation;
@@ -241,9 +240,13 @@ class MutationCache {
     return true;
   }
 
-  bool removeStatic(MutationKey key) {
+  void dispose(MutationKey key) {
+    if (key.static) {
+      _staticKeys.remove(key);
+    } else {
+      _retainCount.remove(key);
+    }
     _data.remove(key)?.dispose();
-    return _staticKeys.remove(key);
   }
 
   Mutation<R>? getMutation<R>(MutationKey<R> key) {

@@ -5,8 +5,7 @@ class GlobalStateMutations {
   final authTokenKey = MutationKey<String>();
 
   GlobalStateMutations._internal() {
-    observeMutation(
-      authTokenKey,
+    authTokenKey.addObserve(
       onUpdateData: (data, {before}) {
         print("onUpdateData:$data, $before");
       },

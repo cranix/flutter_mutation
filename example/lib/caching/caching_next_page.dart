@@ -1,5 +1,5 @@
 import 'package:example/caching/caching_api.dart';
-import 'package:example/caching/hooks/use_caching_mutation.dart';
+import 'package:example/caching/caching_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
