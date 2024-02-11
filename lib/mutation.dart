@@ -28,19 +28,19 @@ class Mutation<R> extends ChangeNotifier {
 
   bool get isEmpty => data == null;
 
-  bool get isInitializing => _loading && !_initialized;
-
   bool get isInitilized => _initialized;
 
   bool _disposed = false;
 
   bool get isDisposed => _disposed;
 
+  bool _initializeStarted = false;
+
   bool _initialized = false;
 
   final List<MutationOnUpdateDataCallback<R>> _onUpdateDataList = [];
   final List<MutationOnUpdateErrorCallback> _onUpdateErrorList = [];
-  final List<MutationOnUpdateInitializingCallback> _onUpdateInitializingList =
+  final List<MutationOnUpdateInitializedCallback> _onUpdateInitializedList =
       [];
   final List<MutationOnUpdateLoadingCallback> _onUpdateLoadingList = [];
   final List<MutationOnClearCallback> _onClearList = [];
@@ -52,7 +52,7 @@ class Mutation<R> extends ChangeNotifier {
   Mutation(this.key,
       {R? initialValue,
       MutationGetInitialValueCallback<R>? getInitialValue,
-      MutationOnUpdateInitializingCallback? onUpdateInitializing,
+      MutationOnUpdateInitializedCallback? onUpdateInitialized,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateLoadingCallback? onUpdateLoading,
@@ -67,8 +67,8 @@ class Mutation<R> extends ChangeNotifier {
     if (onUpdateError != null) {
       _onUpdateErrorList.add(onUpdateError);
     }
-    if (onUpdateInitializing != null) {
-      _onUpdateInitializingList.add(onUpdateInitializing);
+    if (onUpdateInitialized != null) {
+      _onUpdateInitializedList.add(onUpdateInitialized);
     }
     if (onUpdateLoading != null) {
       _onUpdateLoadingList.add(onUpdateLoading);
@@ -94,17 +94,20 @@ class Mutation<R> extends ChangeNotifier {
     }
   }
 
-  updateInitialize(MutationGetInitialValueCallback<R> callback) {
-    _getInitialValue = callback;
-    initialize();
-  }
-
-  initialize() {
-    if (_initialized || _getInitialValue == null) {
+  Future<bool> updateInitialize(MutationGetInitialValueCallback<R> callback) async {
+    if (_initializeStarted) {
       return false;
     }
-    _initialized = true;
-    _runInitializeFuture(_getInitialValue);
+    _getInitialValue = callback;
+    return await initialize();
+  }
+
+  Future<bool> initialize() async {
+    if (_initializeStarted || _getInitialValue == null) {
+      return false;
+    }
+    _initializeStarted = true;
+    await _runInitializeFuture(_getInitialValue);
     return true;
   }
 
@@ -113,9 +116,6 @@ class Mutation<R> extends ChangeNotifier {
       return;
     }
     try {
-      for (var element in _onUpdateInitializingList) {
-        element(true);
-      }
       _updateLoading(true);
       R? value = await callback();
       if (value == null) {
@@ -127,9 +127,7 @@ class Mutation<R> extends ChangeNotifier {
       rethrow;
     } finally {
       _updateLoading(false);
-      for (var element in _onUpdateInitializingList) {
-        element(false);
-      }
+      _updateInitialized(true);
     }
   }
 
@@ -190,18 +188,18 @@ class Mutation<R> extends ChangeNotifier {
     return this;
   }
 
-  Mutation<R> addOnUpdateInitializingCallback(
-      MutationOnUpdateInitializingCallback callback) {
-    _onUpdateInitializingList.add(callback);
+  Mutation<R> addOnUpdateInitializedCallback(
+      MutationOnUpdateInitializedCallback callback) {
+    _onUpdateInitializedList.add(callback);
     if (autoInitialize) {
       initialize();
     }
     return this;
   }
 
-  Mutation<R> removeOnUpdateInitializingCallback(
-      MutationOnUpdateInitializingCallback callback) {
-    _onUpdateInitializingList.remove(callback);
+  Mutation<R> removeOnUpdateInitializedCallback(
+      MutationOnUpdateInitializedCallback callback) {
+    _onUpdateInitializedList.remove(callback);
     return this;
   }
 
@@ -234,12 +232,22 @@ class Mutation<R> extends ChangeNotifier {
     if (!append && data == this.data) {
       return false;
     }
-
-    _initialized = true;
     R? before = this.data;
     _setData(data, append: append);
     for (var element in _onUpdateDataList) {
       element(data, before: before);
+    }
+    notifyListeners();
+    return true;
+  }
+
+  bool _updateInitialized(bool initialized) {
+    if (_initialized == initialized) {
+      return false;
+    }
+    _initialized = initialized;
+    for (var element in _onUpdateInitializedList) {
+      element(initialized);
     }
     notifyListeners();
     return true;
@@ -274,8 +282,8 @@ class Mutation<R> extends ChangeNotifier {
     if (_disposed) {
       throw const MutationException("mutation disposed");
     }
-    _initialized = true;
     try {
+      _updateInitialized(true);
       _updateLoading(true);
       final data = await future;
       _updateData(data, append: append);
@@ -292,6 +300,7 @@ class Mutation<R> extends ChangeNotifier {
     if (_disposed) {
       throw const MutationException("mutation disposed");
     }
+    _updateInitialized(true);
     _updateData(data, append: append);
   }
 

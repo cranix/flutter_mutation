@@ -16,7 +16,7 @@ class MutationKey<R> {
 
   bool? get isLoading => _mutation?.isLoading;
 
-  bool? get isInitializing => _mutation?.isInitializing;
+  bool? get isInitialized => _mutation?.isInitilized;
 
   final bool static;
 
@@ -35,6 +35,10 @@ class MutationKey<R> {
     return _getMutationOrNew().mutate(future, append: append);
   }
 
+  Future<bool> updateInitialize(MutationGetInitialValueCallback<R> callback) {
+    return _getMutationOrNew().updateInitialize(callback);
+  }
+
   void clear() {
     _mutation?.clear();
   }
@@ -46,7 +50,7 @@ class MutationKey<R> {
   void addObserve({
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnClearCallback? onClear,
     MutationOnCreateCallback<R>? onCreate,
@@ -55,7 +59,7 @@ class MutationKey<R> {
     MutationCache.instance.addObserve(this,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
-        onUpdateInitializing: onUpdateInitializing,
+        onUpdateInitialized: onUpdateInitialized,
         onUpdateLoading: onUpdateLoading,
         onClear: onClear,
         onCreate: onCreate,
@@ -65,7 +69,7 @@ class MutationKey<R> {
   bool removeObserve({
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnClearCallback? onClear,
     MutationOnCreateCallback<R>? onCreate,
@@ -74,7 +78,7 @@ class MutationKey<R> {
     return MutationCache.instance.removeObserve(this,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
-        onUpdateInitializing: onUpdateInitializing,
+        onUpdateInitialized: onUpdateInitialized,
         onUpdateLoading: onUpdateLoading,
         onClear: onClear,
         onCreate: onCreate,

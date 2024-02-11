@@ -2,7 +2,7 @@ import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_key.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
-enum EventKey { DATA, ERROR, INITIALIZING, LOADING, CLEAR, CREATE, DISPOSE }
+enum EventKey { DATA, ERROR, INITIALIZED, LOADING, CLEAR, CREATE, DISPOSE }
 
 class MutationCache {
   static final instance = MutationCache._();
@@ -48,7 +48,7 @@ class MutationCache {
     MutationKey<R> key, {
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnClearCallback? onClear,
     MutationOnCreateCallback<R>? onCreate,
@@ -62,9 +62,9 @@ class MutationCache {
       final list = _getOrNewMapList(EventKey.ERROR, key);
       list.add(onUpdateError);
     }
-    if (onUpdateInitializing != null) {
-      final list = _getOrNewMapList(EventKey.INITIALIZING, key);
-      list.add(onUpdateInitializing);
+    if (onUpdateInitialized != null) {
+      final list = _getOrNewMapList(EventKey.INITIALIZED, key);
+      list.add(onUpdateInitialized);
     }
     if (onUpdateLoading != null) {
       final list = _getOrNewMapList(EventKey.LOADING, key);
@@ -88,7 +88,7 @@ class MutationCache {
     MutationKey<R> key, {
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializingCallback? onUpdateInitializing,
+    MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnClearCallback? onClear,
     MutationOnCreateCallback<R>? onCreate,
@@ -100,8 +100,8 @@ class MutationCache {
     if (onUpdateError != null) {
       return _removeMapList(EventKey.ERROR, key, onUpdateData);
     }
-    if (onUpdateInitializing != null) {
-      return _removeMapList(EventKey.INITIALIZING, key, onUpdateData);
+    if (onUpdateInitialized != null) {
+      return _removeMapList(EventKey.INITIALIZED, key, onUpdateData);
     }
     if (onUpdateLoading != null) {
       return _removeMapList(EventKey.LOADING, key, onUpdateData);
@@ -128,9 +128,9 @@ class MutationCache {
         ?.forEach((e) => e(error, before: before));
   }
 
-  _onUpdateInitializing(MutationKey retainKey, bool initializing) {
-    _onEventMapListMap[EventKey.INITIALIZING]?[retainKey]
-        ?.forEach((e) => e(initializing));
+  _onUpdateInitialized(MutationKey retainKey, bool initialized) {
+    _onEventMapListMap[EventKey.INITIALIZED]?[retainKey]
+        ?.forEach((e) => e(initialized));
   }
 
   _onUpdateLoading(MutationKey retainKey, bool loading) {
@@ -152,7 +152,7 @@ class MutationCache {
       MutationGetInitialValueCallback<R>? getInitialValue,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
-      MutationOnUpdateInitializingCallback? onUpdateInitializing,
+      MutationOnUpdateInitializedCallback? onUpdateInitialized,
       MutationOnUpdateLoadingCallback? onUpdateLoading,
       MutationOnClearCallback? onClear,
       MutationOnCreateCallback<R>? onCreate,
@@ -165,7 +165,7 @@ class MutationCache {
           getInitialValue: getInitialValue,
           onUpdateData: onUpdateData,
           onUpdateError: onUpdateError,
-          onUpdateInitializing: onUpdateInitializing,
+          onUpdateInitialized: onUpdateInitialized,
           onUpdateLoading: onUpdateLoading,
           onClear: onClear,
           onCreate: onCreate,
@@ -187,10 +187,10 @@ class MutationCache {
           _onUpdateError(observeKey, error);
         }
       });
-      mutation.addOnUpdateInitializingCallback((initializing) {
-        _onUpdateInitializing(key, initializing);
+      mutation.addOnUpdateInitializedCallback((initialized) {
+        _onUpdateInitialized(key, initialized);
         for (var observeKey in observeKeys) {
-          _onUpdateInitializing(observeKey, initializing);
+          _onUpdateInitialized(observeKey, initialized);
         }
       });
       mutation.addOnUpdateLoadingCallback((loading) {
