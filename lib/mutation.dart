@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_mutation/exception/mutation_closed_exception.dart';
 import 'package:flutter_mutation/mutation_key.dart';
+import 'package:flutter_mutation/mutation_subscription.dart';
 
 import 'mutation_types.dart';
 
@@ -55,8 +56,7 @@ class Mutation<R> {
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateLoadingCallback? onUpdateLoading,
       MutationOnCloseCallback<R>? onClose,
-      this.autoInitialize = true,
-      bool enableInitialize = true}) {
+      this.autoInitialize = true}) {
     if (onUpdateData != null) {
       _onUpdateDataList.add(onUpdateData);
     }
@@ -78,76 +78,61 @@ class Mutation<R> {
     _getInitialValue = getInitialValue;
   }
 
-  Mutation<R> addOnCloseCallback(MutationOnCloseCallback<R> callback) {
-    _onCloseList.add(callback);
+  MutationSubscription<R> addObserve({
+    MutationOnUpdateInitializedCallback? onUpdateInitialized,
+    MutationOnUpdateDataCallback<R>? onUpdateData,
+    MutationOnUpdateErrorCallback? onUpdateError,
+    MutationOnUpdateLoadingCallback? onUpdateLoading,
+    MutationOnCloseCallback<R>? onClose,
+  }) {
+    if (onUpdateInitialized != null) {
+      _onUpdateInitializedList.add(onUpdateInitialized);
+    }
+    if (onUpdateData != null) {
+      _onUpdateDataList.add(onUpdateData);
+    }
+    if (onUpdateError != null) {
+      _onUpdateErrorList.add(onUpdateError);
+    }
+    if (onUpdateLoading != null) {
+      _onUpdateLoadingList.add(onUpdateLoading);
+    }
+    if (onClose != null) {
+      _onCloseList.add(onClose);
+    }
     if (autoInitialize) {
       initialize();
     }
-    return this;
+    return MutationSubscription(key,
+        onUpdateInitialized: onUpdateInitialized,
+        onUpdateData: onUpdateData,
+        onUpdateError: onUpdateError,
+        onUpdateLoading: onUpdateLoading,
+        onClose: onClose);
   }
 
-  Mutation<R> removeOnCloseCallback(MutationOnCloseCallback<R> callback) {
-    _onCloseList.remove(callback);
-    return this;
-  }
-
-  Mutation<R> addOnUpdateDataCallback(
-      MutationOnUpdateDataCallback<R> callback) {
-    _onUpdateDataList.add(callback);
-    if (autoInitialize) {
-      initialize();
+  void removeObserve({
+    MutationOnUpdateInitializedCallback? onUpdateInitialized,
+    MutationOnUpdateDataCallback<R>? onUpdateData,
+    MutationOnUpdateErrorCallback? onUpdateError,
+    MutationOnUpdateLoadingCallback? onUpdateLoading,
+    MutationOnCloseCallback<R>? onClose,
+  }) {
+    if (onUpdateInitialized != null) {
+      _onUpdateInitializedList.remove(onUpdateInitialized);
     }
-    return this;
-  }
-
-  Mutation<R> removeOnUpdateDataCallback(
-      MutationOnUpdateDataCallback<R> callback) {
-    _onUpdateDataList.remove(callback);
-    return this;
-  }
-
-  Mutation<R> addOnUpdateErrorCallback(MutationOnUpdateErrorCallback callback) {
-    _onUpdateErrorList.add(callback);
-    if (autoInitialize) {
-      initialize();
+    if (onUpdateData != null) {
+      _onUpdateDataList.remove(onUpdateData);
     }
-    return this;
-  }
-
-  Mutation<R> removeOnUpdateErrorCallback(
-      MutationOnUpdateErrorCallback callback) {
-    _onUpdateErrorList.remove(callback);
-    return this;
-  }
-
-  Mutation<R> addOnUpdateLoadingCallback(
-      MutationOnUpdateLoadingCallback callback) {
-    _onUpdateLoadingList.add(callback);
-    if (autoInitialize) {
-      initialize();
+    if (onUpdateError != null) {
+      _onUpdateErrorList.remove(onUpdateError);
     }
-    return this;
-  }
-
-  Mutation<R> removeOnUpdateLoadingCallback(
-      MutationOnUpdateLoadingCallback callback) {
-    _onUpdateLoadingList.remove(callback);
-    return this;
-  }
-
-  Mutation<R> addOnUpdateInitializedCallback(
-      MutationOnUpdateInitializedCallback callback) {
-    _onUpdateInitializedList.add(callback);
-    if (autoInitialize) {
-      initialize();
+    if (onUpdateLoading != null) {
+      _onUpdateLoadingList.remove(onUpdateLoading);
     }
-    return this;
-  }
-
-  Mutation<R> removeOnUpdateInitializedCallback(
-      MutationOnUpdateInitializedCallback callback) {
-    _onUpdateInitializedList.remove(callback);
-    return this;
+    if (onClose != null) {
+      _onCloseList.remove(onClose);
+    }
   }
 
   void _setData(R? data, {bool append = false}) {

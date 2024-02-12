@@ -27,14 +27,11 @@ R? useMutationData<R>(
       observeKeys: observeKeys);
   final state = useState<R?>(mutation.data);
   useEffect(() {
-    void listener(R? data, {R? before}) {
+    final subscription =
+        mutation.addObserve(onUpdateData: (R? data, {R? before}) {
       state.value = data;
-    }
-
-    mutation.addOnUpdateDataCallback(listener);
-    return () {
-      mutation.removeOnUpdateDataCallback(listener);
-    };
+    });
+    return subscription.cancel;
   }, [mutation]);
   return state.value;
 }

@@ -27,14 +27,10 @@ bool useMutationLoading<R>(
       observeKeys: observeKeys);
   final state = useState<bool>(mutation.isLoading);
   useEffect(() {
-    void listener(bool loading) {
+    final subscription = mutation.addObserve(onUpdateLoading: (bool loading) {
       state.value = loading;
-    }
-
-    mutation.addOnUpdateLoadingCallback(listener);
-    return () {
-      mutation.removeOnUpdateLoadingCallback(listener);
-    };
+    });
+    return subscription.cancel;
   }, [mutation]);
   return state.value;
 }

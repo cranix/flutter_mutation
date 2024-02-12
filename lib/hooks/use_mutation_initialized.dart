@@ -27,13 +27,10 @@ bool useMutationInitialized<R>(
       observeKeys: observeKeys);
   final state = useState<bool>(key?.isInitialized ?? false);
   useEffect(() {
-    void listener() {
+    final subscription = mutation.addObserve(onUpdateInitialized: () {
       state.value = true;
-    }
-    mutation.addOnUpdateInitializedCallback(listener);
-    return () {
-      mutation.removeOnUpdateInitializedCallback(listener);
-    };
+    });
+    return subscription.cancel;
   }, [mutation]);
   return state.value;
 }

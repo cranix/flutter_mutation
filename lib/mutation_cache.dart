@@ -1,6 +1,6 @@
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_key.dart';
-import 'package:flutter_mutation/mutation_subscription.dart';
+import 'package:flutter_mutation/mutation_cache_subscription.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 enum EventKey { DATA, ERROR, INITIALIZED, LOADING, OPEN, CLOSE }
@@ -45,7 +45,7 @@ class MutationCache {
     return res;
   }
 
-  MutationSubscription<R> addObserve<R>(
+  MutationCacheSubscription<R> addObserve<R>(
     MutationKey<R> key, {
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
@@ -79,7 +79,7 @@ class MutationCache {
       list.add(onClose);
     }
 
-    return MutationSubscription(key,
+    return MutationCacheSubscription(key,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
@@ -164,7 +164,7 @@ class MutationCache {
 
       _onEventMapListMap[EventKey.OPEN]?[key]?.forEach((e) {
         final res = e(mutation);
-        mutation?.addOnCloseCallback((mutation) {
+        mutation?.addObserve(onClose: (mutation) {
           if (res != null) {
             res();
           }
@@ -173,7 +173,7 @@ class MutationCache {
       for (var observeKey in observeKeys) {
         _onEventMapListMap[EventKey.OPEN]?[observeKey]?.forEach((e) {
           final res = e(mutation);
-          mutation!.addOnCloseCallback((mutation) {
+          mutation?.addObserve(onClose: (mutation) {
             if (res != null) {
               res();
             }
@@ -183,36 +183,32 @@ class MutationCache {
       if (onOpen != null) {
         final res = onOpen(mutation);
         if (res != null) {
-          mutation.addOnCloseCallback((mutation) {
+          mutation.addObserve(onClose: (mutation) {
             res();
           });
         }
       }
-      mutation.addOnUpdateDataCallback((data, {before}) {
+      mutation.addObserve(onUpdateData: (data, {before}) {
         _onUpdateData(key, data, before: before);
         for (var observeKey in observeKeys) {
           _onUpdateData(observeKey, data);
         }
-      });
-      mutation.addOnUpdateErrorCallback((error, {before}) {
+      }, onUpdateError: (error, {before}) {
         _onUpdateError(key, error, before: before);
         for (var observeKey in observeKeys) {
           _onUpdateError(observeKey, error);
         }
-      });
-      mutation.addOnUpdateInitializedCallback(() {
+      }, onUpdateInitialized: () {
         _onUpdateInitialized(key);
         for (var observeKey in observeKeys) {
           _onUpdateInitialized(observeKey);
         }
-      });
-      mutation.addOnUpdateLoadingCallback((loading) {
+      }, onUpdateLoading: (loading) {
         _onUpdateLoading(key, loading);
         for (var observeKey in observeKeys) {
           _onUpdateLoading(observeKey, loading);
         }
-      });
-      mutation.addOnCloseCallback((mutation) {
+      }, onClose: (mutation) {
         _onClose(key, mutation);
         for (var observeKey in observeKeys) {
           _onClose(observeKey, mutation);

@@ -28,14 +28,11 @@ Object? useMutationError<R>(
       observeKeys: observeKeys);
   final state = useState<Object?>(mutation.error);
   useEffect(() {
-    void listener(Object? error, {Object? before}) {
+    final subscription =
+        mutation.addObserve(onUpdateError: (Object? error, {Object? before}) {
       state.value = error;
-    }
-
-    mutation.addOnUpdateErrorCallback(listener);
-    return () {
-      mutation.removeOnUpdateErrorCallback(listener);
-    };
+    });
+    return subscription.cancel;
   }, [mutation]);
   return state.value;
 }

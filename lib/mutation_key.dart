@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_cache.dart';
-import 'package:flutter_mutation/mutation_subscription.dart';
+import 'package:flutter_mutation/mutation_cache_subscription.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 class MutationKey<R> {
@@ -82,7 +82,7 @@ class MutationKey<R> {
     MutationCache.instance.remove(this);
   }
 
-  MutationSubscription<R> observe({
+  MutationCacheSubscription<R> observe({
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,

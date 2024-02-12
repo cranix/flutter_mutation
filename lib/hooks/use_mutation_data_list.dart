@@ -28,14 +28,11 @@ List<R> useMutationDataList<R>(
       observeKeys: observeKeys);
   final state = useState<List<R>>(mutation.dataList);
   useEffect(() {
-    void listener(R? data, {R? before}) {
+    final subscription =
+        mutation.addObserve(onUpdateData: (R? data, {R? before}) {
       state.value = mutation.dataList;
-    }
-
-    mutation.addOnUpdateDataCallback(listener);
-    return () {
-      mutation.removeOnUpdateDataCallback(listener);
-    };
+    });
+    return subscription.cancel;
   }, [mutation]);
   return state.value;
 }

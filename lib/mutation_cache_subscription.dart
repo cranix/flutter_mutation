@@ -3,33 +3,32 @@ import 'package:flutter_mutation/mutation_key.dart';
 
 import 'mutation_types.dart';
 
-class MutationSubscription<R> {
+class MutationCacheSubscription<R> {
   MutationKey<R> key;
-  MutationOnUpdateInitializedCallback? onUpdateInitialized;
   MutationOnUpdateDataCallback<R>? onUpdateData;
   MutationOnUpdateErrorCallback? onUpdateError;
+  MutationOnUpdateInitializedCallback? onUpdateInitialized;
   MutationOnUpdateLoadingCallback? onUpdateLoading;
+  MutationOnOpenCallback<R>? onOpen;
   MutationOnCloseCallback<R>? onClose;
 
-  MutationSubscription(
+  MutationCacheSubscription(
     this.key, {
     this.onUpdateData,
     this.onUpdateError,
     this.onUpdateInitialized,
     this.onUpdateLoading,
+    this.onOpen,
     this.onClose,
   });
 
-  void cancel() {
-    final mutation = MutationCache.instance.getMutation(key);
-    if (mutation == null) {
-      return;
-    }
-    mutation.removeObserve(
-        onUpdateInitialized: onUpdateInitialized,
+  cancel() {
+    MutationCache.instance.removeObserve(key,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
+        onUpdateInitialized: onUpdateInitialized,
         onUpdateLoading: onUpdateLoading,
+        onOpen: onOpen,
         onClose: onClose);
   }
 }
