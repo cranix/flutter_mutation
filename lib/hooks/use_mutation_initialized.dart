@@ -11,9 +11,8 @@ bool useMutationInitialized<R>(
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
+    MutationOnOpenCallback<R>? onOpen,
+    MutationOnCloseCallback<R>? onClose,
     List<MutationKey<R>> observeKeys = const []}) {
   final mutation = useMutation(
       key: key,
@@ -23,14 +22,13 @@ bool useMutationInitialized<R>(
       onUpdateError: onUpdateError,
       onUpdateInitialized: onUpdateInitialized,
       onUpdateLoading: onUpdateLoading,
-      onClear: onClear,
-      onCreate: onCreate,
-      onDispose: onDispose,
+      onOpen: onOpen,
+      onClose: onClose,
       observeKeys: observeKeys);
-  final state = useState<bool>(mutation.isInitilized);
+  final state = useState<bool>(key?.isInitialized ?? false);
   useEffect(() {
-    void listener(bool data) {
-      state.value = data;
+    void listener() {
+      state.value = true;
     }
     mutation.addOnUpdateInitializedCallback(listener);
     return () {

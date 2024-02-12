@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
 
-final MutationKey<CachingResponse> cacheKey = MutationKey(static: false);
+final MutationKey<CachingResponse> cacheKey = MutationKey.autoClose();
 
 class CachingPage extends HookWidget {
   const CachingPage({super.key});
@@ -17,6 +17,15 @@ class CachingPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    useEffect(() {
+      final subscription = cacheKey.observe(onClose: (mutation) {
+        print("closed:$mutation");
+      });
+      return () {
+        subscription.cancel();
+        print("disposed:$cacheKey");
+      };
+    }, [cacheKey]);
     final onPressRefresh = useCallback(() async {
       await CachingApi.get().mutate(cacheKey);
     }, []);

@@ -1,8 +1,9 @@
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_key.dart';
+import 'package:flutter_mutation/mutation_subscription.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
-enum EventKey { DATA, ERROR, INITIALIZED, LOADING, CLEAR, CREATE, DISPOSE }
+enum EventKey { DATA, ERROR, INITIALIZED, LOADING, OPEN, CLOSE }
 
 class MutationCache {
   static final instance = MutationCache._();
@@ -44,15 +45,14 @@ class MutationCache {
     return res;
   }
 
-  void addObserve<R>(
+  MutationSubscription<R> addObserve<R>(
     MutationKey<R> key, {
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
+    MutationOnOpenCallback<R>? onOpen,
+    MutationOnCloseCallback<R>? onClose,
   }) {
     if (onUpdateData != null) {
       final list = _getOrNewMapList(EventKey.DATA, key);
@@ -70,18 +70,22 @@ class MutationCache {
       final list = _getOrNewMapList(EventKey.LOADING, key);
       list.add(onUpdateLoading);
     }
-    if (onClear != null) {
-      final list = _getOrNewMapList(EventKey.CLEAR, key);
-      list.add(onClear);
+    if (onOpen != null) {
+      final list = _getOrNewMapList(EventKey.OPEN, key);
+      list.add(onOpen);
     }
-    if (onCreate != null) {
-      final list = _getOrNewMapList(EventKey.CREATE, key);
-      list.add(onCreate);
+    if (onClose != null) {
+      final list = _getOrNewMapList(EventKey.CLOSE, key);
+      list.add(onClose);
     }
-    if (onDispose != null) {
-      final list = _getOrNewMapList(EventKey.DISPOSE, key);
-      list.add(onDispose);
-    }
+
+    return MutationSubscription(key,
+        onUpdateData: onUpdateData,
+        onUpdateError: onUpdateError,
+        onUpdateInitialized: onUpdateInitialized,
+        onUpdateLoading: onUpdateLoading,
+        onOpen: onOpen,
+        onClose: onClose);
   }
 
   bool removeObserve<R>(
@@ -90,30 +94,26 @@ class MutationCache {
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
+    MutationOnOpenCallback<R>? onOpen,
+    MutationOnCloseCallback<R>? onClose,
   }) {
     if (onUpdateData != null) {
       return _removeMapList(EventKey.DATA, key, onUpdateData);
     }
     if (onUpdateError != null) {
-      return _removeMapList(EventKey.ERROR, key, onUpdateData);
+      return _removeMapList(EventKey.ERROR, key, onUpdateError);
     }
     if (onUpdateInitialized != null) {
-      return _removeMapList(EventKey.INITIALIZED, key, onUpdateData);
+      return _removeMapList(EventKey.INITIALIZED, key, onUpdateInitialized);
     }
     if (onUpdateLoading != null) {
-      return _removeMapList(EventKey.LOADING, key, onUpdateData);
+      return _removeMapList(EventKey.LOADING, key, onUpdateLoading);
     }
-    if (onClear != null) {
-      return _removeMapList(EventKey.CLEAR, key, onUpdateData);
+    if (onOpen != null) {
+      return _removeMapList(EventKey.OPEN, key, onOpen);
     }
-    if (onCreate != null) {
-      return _removeMapList(EventKey.CREATE, key, onUpdateData);
-    }
-    if (onDispose != null) {
-      return _removeMapList(EventKey.DISPOSE, key, onUpdateData);
+    if (onClose != null) {
+      return _removeMapList(EventKey.CLOSE, key, onClose);
     }
     return false;
   }
@@ -128,9 +128,8 @@ class MutationCache {
         ?.forEach((e) => e(error, before: before));
   }
 
-  _onUpdateInitialized(MutationKey retainKey, bool initialized) {
-    _onEventMapListMap[EventKey.INITIALIZED]?[retainKey]
-        ?.forEach((e) => e(initialized));
+  _onUpdateInitialized(MutationKey retainKey) {
+    _onEventMapListMap[EventKey.INITIALIZED]?[retainKey]?.forEach((e) => e());
   }
 
   _onUpdateLoading(MutationKey retainKey, bool loading) {
@@ -138,13 +137,8 @@ class MutationCache {
         ?.forEach((e) => e(loading));
   }
 
-  _onClear(MutationKey retainKey) {
-    _onEventMapListMap[EventKey.CLEAR]?[retainKey]?.forEach((e) => e());
-  }
-
-  _onDispose(MutationKey retainKey, Mutation mutation) {
-    _onEventMapListMap[EventKey.DISPOSE]?[retainKey]
-        ?.forEach((e) => e(mutation));
+  _onClose(MutationKey retainKey, Mutation mutation) {
+    _onEventMapListMap[EventKey.CLOSE]?[retainKey]?.forEach((e) => e(mutation));
   }
 
   Mutation<R> retain<R>(MutationKey<R> key,
@@ -154,9 +148,8 @@ class MutationCache {
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
       MutationOnUpdateLoadingCallback? onUpdateLoading,
-      MutationOnClearCallback? onClear,
-      MutationOnCreateCallback<R>? onCreate,
-      MutationOnDisposeCallback<R>? onDispose,
+      MutationOnOpenCallback<R>? onOpen,
+      MutationOnCloseCallback<R>? onClose,
       List<MutationKey<R>> observeKeys = const []}) {
     var mutation = _data[key] as Mutation<R>?;
     if (mutation == null) {
@@ -167,13 +160,33 @@ class MutationCache {
           onUpdateError: onUpdateError,
           onUpdateInitialized: onUpdateInitialized,
           onUpdateLoading: onUpdateLoading,
-          onClear: onClear,
-          onCreate: onCreate,
-          onDispose: onDispose);
-      _onEventMapListMap[EventKey.CREATE]?[key]?.forEach((e) => e(mutation));
+          onClose: onClose);
+
+      _onEventMapListMap[EventKey.OPEN]?[key]?.forEach((e) {
+        final res = e(mutation);
+        mutation?.addOnCloseCallback((mutation) {
+          if (res != null) {
+            res();
+          }
+        });
+      });
       for (var observeKey in observeKeys) {
-        _onEventMapListMap[EventKey.CREATE]?[observeKey]
-            ?.forEach((e) => e(mutation));
+        _onEventMapListMap[EventKey.OPEN]?[observeKey]?.forEach((e) {
+          final res = e(mutation);
+          mutation!.addOnCloseCallback((mutation) {
+            if (res != null) {
+              res();
+            }
+          });
+        });
+      }
+      if (onOpen != null) {
+        final res = onOpen(mutation);
+        if (res != null) {
+          mutation.addOnCloseCallback((mutation) {
+            res();
+          });
+        }
       }
       mutation.addOnUpdateDataCallback((data, {before}) {
         _onUpdateData(key, data, before: before);
@@ -187,10 +200,10 @@ class MutationCache {
           _onUpdateError(observeKey, error);
         }
       });
-      mutation.addOnUpdateInitializedCallback((initialized) {
-        _onUpdateInitialized(key, initialized);
+      mutation.addOnUpdateInitializedCallback(() {
+        _onUpdateInitialized(key);
         for (var observeKey in observeKeys) {
-          _onUpdateInitialized(observeKey, initialized);
+          _onUpdateInitialized(observeKey);
         }
       });
       mutation.addOnUpdateLoadingCallback((loading) {
@@ -199,16 +212,10 @@ class MutationCache {
           _onUpdateLoading(observeKey, loading);
         }
       });
-      mutation.addOnClearCallback(() {
-        _onClear(key);
+      mutation.addOnCloseCallback((mutation) {
+        _onClose(key, mutation);
         for (var observeKey in observeKeys) {
-          _onClear(observeKey);
-        }
-      });
-      mutation.addOnDisposeCallback((mutation) {
-        _onDispose(key, mutation);
-        for (var observeKey in observeKeys) {
-          _onDispose(observeKey, mutation);
+          _onClose(observeKey, mutation);
         }
       });
       _data[key] = mutation;
@@ -234,19 +241,16 @@ class MutationCache {
       _retainCount[key] = count - 1;
       return false;
     }
-    _retainCount.remove(key);
-    final mutation = _data.remove(key);
-    mutation?.dispose();
-    return true;
+    return remove(key);
   }
 
-  void dispose(MutationKey key) {
+  bool remove(MutationKey key) {
     if (key.static) {
       _staticKeys.remove(key);
     } else {
       _retainCount.remove(key);
     }
-    _data.remove(key)?.dispose();
+    return _data.remove(key) != null;
   }
 
   Mutation<R>? getMutation<R>(MutationKey<R> key) {

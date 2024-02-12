@@ -12,23 +12,23 @@ Mutation<R> useMutation<R>(
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
+    MutationOnOpenCallback<R>? onOpen,
+    MutationOnCloseCallback<R>? onClose,
     List<MutationKey<R>> observeKeys = const []}) {
-  final memoKey = useMemoized(() => key ?? MutationKey());
+  final memoKey = useMemoized(() => key ?? MutationKey.autoClose());
   final mutation = useMemoized(() {
-    return MutationCache.instance.retain<R>(memoKey,
+    final m = MutationCache.instance.retain<R>(memoKey,
         initialValue: initialValue,
         getInitialValue: getInitialValue,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
         onUpdateLoading: onUpdateLoading,
-        onClear: onClear,
-        onCreate: onCreate,
-        onDispose: onDispose,
+        onOpen: onOpen,
+        onClose: onClose,
         observeKeys: observeKeys);
+    memoKey.setMutation(m);
+    return m;
   }, [memoKey]);
   useEffect(() {
     if (mutation.isInitilized) {
@@ -41,10 +41,12 @@ Mutation<R> useMutation<R>(
       mutation.updateInitialize(getInitialValue);
     });
   }, [mutation, getInitialValue]);
-
   useEffect(() {
     return () {
-      MutationCache.instance.release(memoKey);
+      bool released = MutationCache.instance.release(memoKey);
+      if (released) {
+        mutation.close();
+      }
     };
   }, [mutation]);
   return mutation;

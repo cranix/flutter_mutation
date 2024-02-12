@@ -3,89 +3,99 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_cache.dart';
+import 'package:flutter_mutation/mutation_subscription.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 class MutationKey<R> {
-  Mutation<R>? get _mutation => MutationCache.instance.getMutation(this);
+  late Mutation<R> _mutation;
 
-  R? get data => _mutation?.data;
+  R? get data => _mutation.data;
 
-  List<R>? get dataList => _mutation?.dataList;
+  List<R> get dataList => _mutation.dataList;
 
-  Object? get error => _mutation?.error;
+  Object? get error => _mutation.error;
 
-  bool? get isLoading => _mutation?.isLoading;
+  bool get isLoading => _mutation.isLoading;
 
-  bool? get isInitialized => _mutation?.isInitilized;
+  bool get isInitialized => _mutation.isInitilized;
 
   final bool static;
 
-  MutationKey({this.static = true});
+  // static mode is retain now
+  MutationKey(
+      {R? initialValue,
+      MutationGetInitialValueCallback<R>? getInitialValue,
+      MutationOnUpdateDataCallback<R>? onUpdateData,
+      MutationOnUpdateErrorCallback? onUpdateError,
+      MutationOnUpdateInitializedCallback? onUpdateInitialized,
+      MutationOnUpdateLoadingCallback? onUpdateLoading,
+      MutationOnOpenCallback<R>? onOpen,
+      MutationOnCloseCallback<R>? onClose,
+      List<MutationKey<R>> observeKeys = const []})
+      : static = true {
+    _mutation = MutationCache.instance.retain(this,
+        initialValue: initialValue,
+        getInitialValue: getInitialValue,
+        onUpdateData: onUpdateData,
+        onUpdateError: onUpdateError,
+        onUpdateInitialized: onUpdateInitialized,
+        onUpdateLoading: onUpdateLoading,
+        onOpen: onOpen,
+        onClose: onClose,
+        observeKeys: observeKeys);
+  }
+
+  // autoClose mode is retain outside
+  MutationKey.autoClose() : static = false;
+
+  setMutation(Mutation<R> mutation) {
+    _mutation = mutation;
+  }
 
   @override
   String toString() {
     return shortHash(this);
   }
 
-  Mutation<R> _getMutationOrNew() {
-    return _mutation ?? MutationCache.instance.retain(this);
-  }
-
   Future<R> mutate(FutureOr<R> future, {bool append = false}) {
-    return _getMutationOrNew().mutate(future, append: append);
+    return _mutation.mutate(future, append: append);
   }
 
   Future<bool> updateInitialize(MutationGetInitialValueCallback<R> callback) {
-    return _getMutationOrNew().updateInitialize(callback);
+    return _mutation.updateInitialize(callback);
   }
 
-  void clear() {
-    _mutation?.clear();
+  bool? clear() {
+    return _mutation.clear();
   }
 
-  void clearError() {
-    _mutation?.clearError();
+  bool? clearError() {
+    return _mutation.clearError();
   }
 
-  void addObserve({
+  bool? clearData() {
+    return _mutation.clearData();
+  }
+
+  void close() {
+    _mutation.close();
+    MutationCache.instance.remove(this);
+  }
+
+  MutationSubscription<R> observe({
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
+    MutationOnOpenCallback<R>? onOpen,
+    MutationOnCloseCallback<R>? onClose,
   }) {
-    MutationCache.instance.addObserve(this,
+    return MutationCache.instance.addObserve(this,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
         onUpdateLoading: onUpdateLoading,
-        onClear: onClear,
-        onCreate: onCreate,
-        onDispose: onDispose);
-  }
-
-  bool removeObserve({
-    MutationOnUpdateDataCallback<R>? onUpdateData,
-    MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializedCallback? onUpdateInitialized,
-    MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
-  }) {
-    return MutationCache.instance.removeObserve(this,
-        onUpdateData: onUpdateData,
-        onUpdateError: onUpdateError,
-        onUpdateInitialized: onUpdateInitialized,
-        onUpdateLoading: onUpdateLoading,
-        onClear: onClear,
-        onCreate: onCreate,
-        onDispose: onDispose);
-  }
-
-  void dispose() {
-    MutationCache.instance.dispose(this);
+        onOpen: onOpen,
+        onClose: onClose);
   }
 }

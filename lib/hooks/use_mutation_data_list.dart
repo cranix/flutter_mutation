@@ -11,9 +11,8 @@ List<R> useMutationDataList<R>(
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnClearCallback? onClear,
-    MutationOnCreateCallback<R>? onCreate,
-    MutationOnDisposeCallback<R>? onDispose,
+    MutationOnOpenCallback<R>? onOpen,
+    MutationOnCloseCallback<R>? onClose,
     List<MutationKey<R>> observeKeys = const [],
     bool enable = true}) {
   final mutation = useMutation(
@@ -24,9 +23,8 @@ List<R> useMutationDataList<R>(
       onUpdateError: onUpdateError,
       onUpdateInitialized: onUpdateInitialized,
       onUpdateLoading: onUpdateLoading,
-      onClear: onClear,
-      onCreate: onCreate,
-      onDispose: onDispose,
+      onOpen: onOpen,
+      onClose: onClose,
       observeKeys: observeKeys);
   final state = useState<List<R>>(mutation.dataList);
   useEffect(() {

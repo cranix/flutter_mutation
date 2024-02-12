@@ -1,51 +1,49 @@
 import 'dart:async';
 
-import 'package:flutter/widgets.dart';
-import 'package:flutter_mutation/mutation_exception.dart';
+import 'package:flutter_mutation/exception/mutation_closed_exception.dart';
 import 'package:flutter_mutation/mutation_key.dart';
 
 import 'mutation_types.dart';
 
-class Mutation<R> extends ChangeNotifier {
+class Mutation<R> {
   final MutationKey<R> key;
   final bool autoInitialize;
 
   Object? _error;
 
-  bool _loading = false;
-
-  List<R> dataList = [];
-
   Object? get error => _error;
-
-  R? get data => dataList.isEmpty ? null : dataList.last;
-
-  bool get isLoading => _loading;
-
-  bool get hasData => data != null;
 
   bool get hasError => error != null;
 
+  List<R> _dataList = [];
+
+  List<R> get dataList => List.of(_dataList, growable: false);
+
+  R? get data => _dataList.isEmpty ? null : _dataList.last;
+
+  bool get hasData => data != null;
+
   bool get isEmpty => data == null;
 
-  bool get isInitilized => _initialized;
+  bool _loading = false;
 
-  bool _disposed = false;
-
-  bool get isDisposed => _disposed;
-
-  bool _initializeStarted = false;
+  bool get isLoading => _loading;
 
   bool _initialized = false;
 
+  bool get isInitilized => _initialized;
+
+  bool _closed = false;
+
+  bool get isClosed => _closed;
+
+  bool _initializeStarted = false;
+
   final List<MutationOnUpdateDataCallback<R>> _onUpdateDataList = [];
   final List<MutationOnUpdateErrorCallback> _onUpdateErrorList = [];
-  final List<MutationOnUpdateInitializedCallback> _onUpdateInitializedList =
-      [];
+  final List<MutationOnUpdateInitializedCallback> _onUpdateInitializedList = [];
   final List<MutationOnUpdateLoadingCallback> _onUpdateLoadingList = [];
-  final List<MutationOnClearCallback> _onClearList = [];
-
-  final List<MutationOnDisposeCallback<R>> _onDisposeList = [];
+  final List<MutationOnCloseCallback<R>> _onCloseList = [];
 
   MutationGetInitialValueCallback<R>? _getInitialValue;
 
@@ -56,9 +54,7 @@ class Mutation<R> extends ChangeNotifier {
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateLoadingCallback? onUpdateLoading,
-      MutationOnClearCallback? onClear,
-      MutationOnCreateCallback<R>? onCreate,
-      MutationOnDisposeCallback<R>? onDispose,
+      MutationOnCloseCallback<R>? onClose,
       this.autoInitialize = true,
       bool enableInitialize = true}) {
     if (onUpdateData != null) {
@@ -73,74 +69,25 @@ class Mutation<R> extends ChangeNotifier {
     if (onUpdateLoading != null) {
       _onUpdateLoadingList.add(onUpdateLoading);
     }
-    if (onClear != null) {
-      _onClearList.add(onClear);
-    }
-    if (onDispose != null) {
-      _onDisposeList.add(onDispose);
+    if (onClose != null) {
+      _onCloseList.add(onClose);
     }
     if (initialValue != null) {
       _setData(initialValue);
     }
     _getInitialValue = getInitialValue;
-
-    if (onCreate != null) {
-      final res = onCreate(this);
-      if (res != null) {
-        _onDisposeList.add((mutation) {
-          res();
-        });
-      }
-    }
   }
 
-  Future<bool> updateInitialize(MutationGetInitialValueCallback<R> callback) async {
-    if (_initializeStarted) {
-      return false;
-    }
-    _getInitialValue = callback;
-    return await initialize();
-  }
-
-  Future<bool> initialize() async {
-    if (_initializeStarted || _getInitialValue == null) {
-      return false;
-    }
-    _initializeStarted = true;
-    await _runInitializeFuture(_getInitialValue);
-    return true;
-  }
-
-  _runInitializeFuture(MutationGetInitialValueCallback<R>? callback) async {
-    if (callback == null) {
-      return;
-    }
-    try {
-      _updateLoading(true);
-      R? value = await callback();
-      if (value == null) {
-        return;
-      }
-      _updateData(value);
-    } catch (e) {
-      _updateError(e);
-      rethrow;
-    } finally {
-      _updateLoading(false);
-      _updateInitialized(true);
-    }
-  }
-
-  Mutation<R> addOnDisposeCallback(MutationOnDisposeCallback<R> callback) {
-    _onDisposeList.add(callback);
+  Mutation<R> addOnCloseCallback(MutationOnCloseCallback<R> callback) {
+    _onCloseList.add(callback);
     if (autoInitialize) {
       initialize();
     }
     return this;
   }
 
-  Mutation<R> removeOnDisposeCallback(MutationOnDisposeCallback<R> callback) {
-    _onDisposeList.remove(callback);
+  Mutation<R> removeOnCloseCallback(MutationOnCloseCallback<R> callback) {
+    _onCloseList.remove(callback);
     return this;
   }
 
@@ -203,28 +150,15 @@ class Mutation<R> extends ChangeNotifier {
     return this;
   }
 
-  Mutation<R> addOnClearCallback(MutationOnClearCallback callback) {
-    _onClearList.add(callback);
-    if (autoInitialize) {
-      initialize();
-    }
-    return this;
-  }
-
-  Mutation<R> removeOnClearCallback(MutationOnClearCallback callback) {
-    _onClearList.remove(callback);
-    return this;
-  }
-
   void _setData(R? data, {bool append = false}) {
     if (data != null) {
       if (append) {
-        dataList += [data];
+        _dataList += [data];
       } else {
-        dataList = [data];
+        _dataList = [data];
       }
     } else {
-      dataList = [];
+      _dataList = [];
     }
   }
 
@@ -237,19 +171,17 @@ class Mutation<R> extends ChangeNotifier {
     for (var element in _onUpdateDataList) {
       element(data, before: before);
     }
-    notifyListeners();
     return true;
   }
 
-  bool _updateInitialized(bool initialized) {
-    if (_initialized == initialized) {
+  bool _updateInitialized() {
+    if (_initialized) {
       return false;
     }
-    _initialized = initialized;
+    _initialized = true;
     for (var element in _onUpdateInitializedList) {
-      element(initialized);
+      element();
     }
-    notifyListeners();
     return true;
   }
 
@@ -261,7 +193,6 @@ class Mutation<R> extends ChangeNotifier {
     for (var element in _onUpdateLoadingList) {
       element(loading);
     }
-    notifyListeners();
     return true;
   }
 
@@ -274,16 +205,14 @@ class Mutation<R> extends ChangeNotifier {
     for (var element in _onUpdateErrorList) {
       element(error, before: before);
     }
-    notifyListeners();
     return true;
   }
 
   Future<R> mutate(FutureOr<R> future, {bool append = false}) async {
-    if (_disposed) {
-      throw const MutationException("mutation disposed");
+    if (_closed) {
+      throw const MutationClosedException();
     }
     try {
-      _updateInitialized(true);
       _updateLoading(true);
       final data = await future;
       _updateData(data, append: append);
@@ -293,62 +222,68 @@ class Mutation<R> extends ChangeNotifier {
       rethrow;
     } finally {
       _updateLoading(false);
+      _updateInitialized();
     }
   }
 
-  void update(R? data, {bool append = false}) {
-    if (_disposed) {
-      throw const MutationException("mutation disposed");
+  Future<bool> updateInitialize(
+      MutationGetInitialValueCallback<R> callback) async {
+    if (_closed) {
+      throw const MutationClosedException();
     }
-    _updateInitialized(true);
-    _updateData(data, append: append);
-  }
-
-  void clearError() {
-    if (_disposed) {
-      throw const MutationException("mutation disposed");
-    }
-    _updateError(null);
-  }
-
-  bool _updateClear() {
-    if (!hasData && !hasError && !isLoading) {
+    if (_initializeStarted || _initialized) {
       return false;
     }
-    _updateData(null);
-    _updateError(null);
-    for (var element in _onClearList) {
-      element();
-    }
+    _initializeStarted = true;
+    _getInitialValue = callback;
+    await mutate(_getInitialValue!());
     return true;
   }
 
-  void clear() {
-    if (_disposed) {
-      throw const MutationException("mutation disposed");
+  Future<bool> initialize() async {
+    if (_closed) {
+      throw const MutationClosedException();
     }
-    _updateClear();
+    if (_initializeStarted || _initialized || _getInitialValue == null) {
+      return false;
+    }
+    _initializeStarted = true;
+    await mutate(_getInitialValue!());
+    return true;
   }
 
-  @override
-  void dispose() {
-    if (_disposed) {
-      throw const MutationException("mutation disposed");
+  bool clearError() {
+    if (_closed) {
+      throw const MutationClosedException();
     }
-    for (var element in _onDisposeList) {
+    return _updateError(null);
+  }
+
+  bool clearData() {
+    if (_closed) {
+      throw const MutationClosedException();
+    }
+    return _updateData(null);
+  }
+
+  bool clear() {
+    if (_closed) {
+      throw const MutationClosedException();
+    }
+    bool updated = false;
+    updated |= _updateData(null);
+    updated |= _updateError(null);
+    return updated;
+  }
+
+  // immutable data
+  void close() {
+    if (_closed) {
+      throw const MutationClosedException();
+    }
+    _closed = true;
+    for (var element in _onCloseList) {
       element(this);
     }
-    dataList = [];
-    _error = null;
-    _loading = false;
-    _onUpdateDataList.clear();
-    _onUpdateErrorList.clear();
-    _onUpdateLoadingList.clear();
-    _onClearList.clear();
-    _onDisposeList.clear();
-    _disposed = true;
-    _initialized = false;
-    _getInitialValue = null;
-    super.dispose();
   }
 }
