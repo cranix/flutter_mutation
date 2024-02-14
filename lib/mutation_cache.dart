@@ -9,7 +9,6 @@ class MutationCache {
   static final instance = MutationCache._();
   final _data = <MutationKey, Mutation>{};
   final _retainCount = <MutationKey, int>{};
-  final _staticKeys = <MutationKey>{};
 
   final _onEventMapListMap = <EventKey, Map<MutationKey, List>>{};
 
@@ -227,20 +226,12 @@ class MutationCache {
           },
           tryInitialize: false);
       _data[key] = mutation;
-      if (key.static) {
-        _staticKeys.add(key);
-      }
     }
-    if (!key.static) {
-      _retainCount[key] = (_retainCount[key] ?? 0) + 1;
-    }
+    _retainCount[key] = (_retainCount[key] ?? 0) + 1;
     return mutation;
   }
 
   bool release(MutationKey key) {
-    if (_staticKeys.contains(key)) {
-      return false;
-    }
     int? count = _retainCount[key];
     if (count == null) {
       return false;
@@ -253,11 +244,7 @@ class MutationCache {
   }
 
   bool remove(MutationKey key) {
-    if (key.static) {
-      _staticKeys.remove(key);
-    } else {
-      _retainCount.remove(key);
-    }
+    _retainCount.remove(key);
     return _data.remove(key) != null;
   }
 

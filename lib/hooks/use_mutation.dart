@@ -15,7 +15,7 @@ Mutation<R> useMutation<R>(
     MutationOnOpenCallback<R>? onOpen,
     MutationOnCloseCallback<R>? onClose,
     List<MutationKey<R>> observeKeys = const []}) {
-  final memoKey = useMemoized(() => key ?? MutationKey.autoClose());
+  final memoKey = useMemoized(() => key ?? MutationKey<R>());
   final mutation = useMemoized(() {
     final m = MutationCache.instance.retain<R>(memoKey,
         initialValue: initialValue,
