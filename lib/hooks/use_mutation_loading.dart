@@ -25,7 +25,8 @@ bool useMutationLoading<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useState<bool>(mutation.isLoading);
+  final state = useValueNotifier<bool>(mutation.isLoading, [mutation]);
+  useListenable(state);
   useEffect(() {
     final subscription = mutation.addObserve(onUpdateLoading: (bool loading) {
       state.value = loading;

@@ -25,7 +25,8 @@ bool useMutationInitialized<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useState<bool>(key?.isInitialized ?? false);
+  final state = useValueNotifier<bool>(key?.isInitialized ?? false, [mutation]);
+  useListenable(state);
   useEffect(() {
     final subscription = mutation.addObserve(onUpdateInitialized: () {
       state.value = true;

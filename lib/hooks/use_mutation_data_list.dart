@@ -26,7 +26,8 @@ List<R> useMutationDataList<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useState<List<R>>(mutation.dataList);
+  final state = useValueNotifier<List<R>>(mutation.dataList, [mutation]);
+  useListenable(state);
   useEffect(() {
     final subscription =
         mutation.addObserve(onUpdateData: (R? data, {R? before}) {

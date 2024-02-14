@@ -1,6 +1,7 @@
 import 'package:example/async_get/async_get_page.dart';
 import 'package:example/async_get2/async_get2_page.dart';
 import 'package:example/caching/caching_page.dart';
+import 'package:example/delayed/delayed_page.dart';
 import 'package:example/global_state/global_state_page.dart';
 import 'package:example/mutation_link/mutation_link_page.dart';
 import 'package:example/pagination/pagination_page.dart';
@@ -89,6 +90,11 @@ class MyHomePage extends StatelessWidget {
                   Navigator.of(context).push(MutationLinkPage.createRoute());
                 },
                 child: const Text("mutation link")),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(DelayedPage.createRoute());
+                },
+                child: const Text("delayed test")),
           ],
         ),
       ),

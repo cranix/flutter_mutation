@@ -25,7 +25,8 @@ R? useMutationData<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useState<R?>(mutation.data);
+  final state = useValueNotifier<R?>(mutation.data, [mutation]);
+  useListenable(state);
   useEffect(() {
     final subscription =
         mutation.addObserve(onUpdateData: (R? data, {R? before}) {

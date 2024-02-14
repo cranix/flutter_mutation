@@ -75,7 +75,7 @@ class Mutation<R> {
       throw const MutationException("initialValue and lazyInitialValue set!");
     }
     if (initialValue != null) {
-      _setData(initialValue());
+      _updateData(initialValue());
       _updateInitialized();
     }
     else {

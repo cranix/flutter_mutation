@@ -26,7 +26,8 @@ Object? useMutationError<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useState<Object?>(mutation.error);
+  final state = useValueNotifier<Object?>(mutation.error, [mutation]);
+  useListenable(state);
   useEffect(() {
     final subscription =
         mutation.addObserve(onUpdateError: (Object? error, {Object? before}) {

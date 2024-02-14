@@ -7,5 +7,5 @@ MutationKey<R> useMutationKey<R>([String? value]) {
       return MutationKey<R>();
     }
     return MutationKey.of<R>(value);
-  });
+  }, [value]);
 }
