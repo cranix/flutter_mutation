@@ -34,7 +34,7 @@ class CachingNextPage extends HookWidget {
             }),
             HookBuilder(builder: (context) {
               final data = useMutationData(
-                  getInitialValue: CachingApi.get, key: cacheKey);
+                  lazyInitialValue: CachingApi.get, key: cacheKey);
               return Text(
                   "nickname: ${data?.nickname}\ncontents: ${data?.contents}");
             }),

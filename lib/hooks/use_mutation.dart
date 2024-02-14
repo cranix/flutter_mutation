@@ -6,8 +6,8 @@ import 'package:flutter_mutation/mutation_types.dart';
 
 Mutation<R> useMutation<R>(
     {MutationKey<R>? key,
-    R? initialValue,
-    MutationGetInitialValueCallback<R>? getInitialValue,
+    MutationInitialValueCallback<R>? initialValue,
+    MutationLazyInitialValueCallback<R>? lazyInitialValue,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -19,7 +19,7 @@ Mutation<R> useMutation<R>(
   final mutation = useMemoized(() {
     final m = MutationCache.instance.retain<R>(memoKey,
         initialValue: initialValue,
-        getInitialValue: getInitialValue,
+        lazyInitialValue: lazyInitialValue,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
@@ -34,13 +34,13 @@ Mutation<R> useMutation<R>(
     if (mutation.isInitilized) {
       return;
     }
-    if (getInitialValue == null) {
+    if (lazyInitialValue == null) {
       return;
     }
     Future.delayed(Duration.zero, () {
-      mutation.updateInitialize(getInitialValue);
+      mutation.updateInitialize(lazyInitialValue);
     });
-  }, [mutation, getInitialValue]);
+  }, [mutation, lazyInitialValue]);
   useEffect(() {
     return () {
       bool released = MutationCache.instance.release(memoKey);

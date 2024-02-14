@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_mutation/exception/mutation_closed_exception.dart';
+import 'package:flutter_mutation/exception/mutation_exception.dart';
 import 'package:flutter_mutation/mutation_key.dart';
 import 'package:flutter_mutation/mutation_subscription.dart';
 
@@ -8,7 +9,6 @@ import 'mutation_types.dart';
 
 class Mutation<R> {
   final MutationKey<R> key;
-  final bool autoInitialize;
 
   Object? _error;
 
@@ -38,7 +38,7 @@ class Mutation<R> {
 
   bool get isClosed => _closed;
 
-  bool _initializeStarted = false;
+  bool _lazyInitializeStarted = false;
 
   final List<MutationOnUpdateDataCallback<R>> _onUpdateDataList = [];
   final List<MutationOnUpdateErrorCallback> _onUpdateErrorList = [];
@@ -46,17 +46,16 @@ class Mutation<R> {
   final List<MutationOnUpdateLoadingCallback> _onUpdateLoadingList = [];
   final List<MutationOnCloseCallback<R>> _onCloseList = [];
 
-  MutationGetInitialValueCallback<R>? _getInitialValue;
+  MutationLazyInitialValueCallback<R>? _lazyInitialValue;
 
   Mutation(this.key,
-      {R? initialValue,
-      MutationGetInitialValueCallback<R>? getInitialValue,
+      {MutationInitialValueCallback<R>? initialValue,
+      MutationLazyInitialValueCallback<R>? lazyInitialValue,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateLoadingCallback? onUpdateLoading,
-      MutationOnCloseCallback<R>? onClose,
-      this.autoInitialize = true}) {
+      MutationOnCloseCallback<R>? onClose}) {
     if (onUpdateData != null) {
       _onUpdateDataList.add(onUpdateData);
     }
@@ -72,10 +71,16 @@ class Mutation<R> {
     if (onClose != null) {
       _onCloseList.add(onClose);
     }
-    if (initialValue != null) {
-      _setData(initialValue);
+    if (initialValue != null && lazyInitialValue != null) {
+      throw const MutationException("initialValue and lazyInitialValue set!");
     }
-    _getInitialValue = getInitialValue;
+    if (initialValue != null) {
+      _setData(initialValue());
+      _updateInitialized();
+    }
+    else {
+      _lazyInitialValue = lazyInitialValue;
+    }
   }
 
   MutationSubscription<R> addObserve({
@@ -84,6 +89,7 @@ class Mutation<R> {
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnCloseCallback<R>? onClose,
+    bool tryInitialize = true,
   }) {
     if (onUpdateInitialized != null) {
       _onUpdateInitializedList.add(onUpdateInitialized);
@@ -100,8 +106,8 @@ class Mutation<R> {
     if (onClose != null) {
       _onCloseList.add(onClose);
     }
-    if (autoInitialize) {
-      initialize();
+    if (tryInitialize) {
+      lazyInitialize();
     }
     return MutationSubscription(key,
         onUpdateInitialized: onUpdateInitialized,
@@ -212,28 +218,28 @@ class Mutation<R> {
   }
 
   Future<bool> updateInitialize(
-      MutationGetInitialValueCallback<R> callback) async {
+      MutationLazyInitialValueCallback<R> callback) async {
     if (_closed) {
       throw const MutationClosedException();
     }
-    if (_initializeStarted || _initialized) {
+    if (_lazyInitializeStarted || _initialized) {
       return false;
     }
-    _initializeStarted = true;
-    _getInitialValue = callback;
-    await mutate(_getInitialValue!());
+    _lazyInitializeStarted = true;
+    _lazyInitialValue = callback;
+    await mutate(_lazyInitialValue!());
     return true;
   }
 
-  Future<bool> initialize() async {
+  Future<bool> lazyInitialize() async {
     if (_closed) {
       throw const MutationClosedException();
     }
-    if (_initializeStarted || _initialized || _getInitialValue == null) {
+    if (_initialized || _lazyInitializeStarted || _lazyInitialValue == null) {
       return false;
     }
-    _initializeStarted = true;
-    await mutate(_getInitialValue!());
+    _lazyInitializeStarted = true;
+    await mutate(_lazyInitialValue!());
     return true;
   }
 
@@ -268,7 +274,7 @@ class Mutation<R> {
     }
     _closed = true;
     for (var element in _onCloseList) {
-      element(this);
+      element(key);
     }
   }
 }

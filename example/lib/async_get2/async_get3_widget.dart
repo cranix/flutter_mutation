@@ -9,7 +9,7 @@ class AsyncGet3Widget extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final data = useMutationData(
-        getInitialValue: AsyncGet2Api.get3
+        lazyInitialValue: AsyncGet2Api.get3
     );
     return Text(data ?? "loading");
   }

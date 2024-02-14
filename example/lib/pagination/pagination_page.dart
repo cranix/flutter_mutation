@@ -31,7 +31,7 @@ class PaginationPage extends HookWidget {
         child: HookBuilder(builder: (context) {
           final dataList = useMutationDataList(key: mutationKey);
           final loading = useMutationLoading(
-              key: mutationKey, getInitialValue: PaginationApi.getList);
+              key: mutationKey, lazyInitialValue: PaginationApi.getList);
           final list = useMemoized(
               () => dataList.expand((element) => element.list).toList(),
               [dataList]);

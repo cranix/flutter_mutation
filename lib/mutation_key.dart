@@ -21,10 +21,11 @@ class MutationKey<R> {
 
   final bool static;
 
+  static final Map<String, MutationKey> _keyStore = {};
   // static mode is retain now
   MutationKey(
-      {R? initialValue,
-      MutationGetInitialValueCallback<R>? getInitialValue,
+      {MutationInitialValueCallback<R>? initialValue,
+      MutationLazyInitialValueCallback<R>? lazyInitialValue,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -35,7 +36,7 @@ class MutationKey<R> {
       : static = true {
     _mutation = MutationCache.instance.retain(this,
         initialValue: initialValue,
-        getInitialValue: getInitialValue,
+        lazyInitialValue: lazyInitialValue,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
@@ -47,6 +48,27 @@ class MutationKey<R> {
 
   // autoClose mode is retain outside
   MutationKey.autoClose() : static = false;
+
+  static MutationKey<R> of<R>(String value) {
+    return _keyStore.putIfAbsent(value, () {
+      final key = MutationKey<R>();
+      key.observe(onClose: (mutation) {
+        _keyStore.remove(key);
+      });
+      return key;
+    }) as MutationKey<R>;
+  }
+
+
+  static MutationKey<R> autoCloseOf<R>(String value) {
+    return _keyStore.putIfAbsent(value, () {
+      final key = MutationKey<R>.autoClose();
+      key.observe(onClose: (mutation) {
+        _keyStore.remove(key);
+      });
+      return key;
+    }) as MutationKey<R>;
+  }
 
   setMutation(Mutation<R> mutation) {
     _mutation = mutation;
@@ -61,7 +83,7 @@ class MutationKey<R> {
     return _mutation.mutate(future, append: append);
   }
 
-  Future<bool> updateInitialize(MutationGetInitialValueCallback<R> callback) {
+  Future<bool> updateInitialize(MutationLazyInitialValueCallback<R> callback) {
     return _mutation.updateInitialize(callback);
   }
 

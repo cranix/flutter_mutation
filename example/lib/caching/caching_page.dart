@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
 
-final MutationKey<CachingResponse> cacheKey = MutationKey.autoClose();
+final MutationKey<CachingResponse> cacheKey = MutationKey.autoCloseOf("aa");
 
 class CachingPage extends HookWidget {
   const CachingPage({super.key});
@@ -47,7 +47,7 @@ class CachingPage extends HookWidget {
                 }),
             HookBuilder(builder: (context) {
               final data = useMutationData(
-                  key: cacheKey, getInitialValue: CachingApi.get);
+                  key: cacheKey, lazyInitialValue: CachingApi.get);
               return Text("title:${data?.title}");
             }),
             TextButton(onPressed: onPressRefresh, child: const Text("refresh")),

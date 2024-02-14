@@ -137,13 +137,13 @@ class MutationCache {
         ?.forEach((e) => e(loading));
   }
 
-  _onClose(MutationKey retainKey, Mutation mutation) {
-    _onEventMapListMap[EventKey.CLOSE]?[retainKey]?.forEach((e) => e(mutation));
+  _onClose(MutationKey key) {
+    _onEventMapListMap[EventKey.CLOSE]?[key]?.forEach((e) => e(key));
   }
 
   Mutation<R> retain<R>(MutationKey<R> key,
-      {R? initialValue,
-      MutationGetInitialValueCallback<R>? getInitialValue,
+      {MutationInitialValueCallback<R>? initialValue,
+      MutationLazyInitialValueCallback<R>? lazyInitialValue,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -155,7 +155,7 @@ class MutationCache {
     if (mutation == null) {
       mutation = Mutation<R>(key,
           initialValue: initialValue,
-          getInitialValue: getInitialValue,
+          lazyInitialValue: lazyInitialValue,
           onUpdateData: onUpdateData,
           onUpdateError: onUpdateError,
           onUpdateInitialized: onUpdateInitialized,
@@ -163,57 +163,69 @@ class MutationCache {
           onClose: onClose);
 
       _onEventMapListMap[EventKey.OPEN]?[key]?.forEach((e) {
-        final res = e(mutation);
-        mutation?.addObserve(onClose: (mutation) {
-          if (res != null) {
-            res();
-          }
-        });
+        final res = e(mutation?.key);
+        mutation?.addObserve(
+            onClose: (mutation) {
+              if (res != null) {
+                res();
+              }
+            },
+            tryInitialize: false);
       });
       for (var observeKey in observeKeys) {
         _onEventMapListMap[EventKey.OPEN]?[observeKey]?.forEach((e) {
-          final res = e(mutation);
-          mutation?.addObserve(onClose: (mutation) {
-            if (res != null) {
-              res();
-            }
-          });
+          final res = e(mutation?.key);
+          mutation?.addObserve(
+              onClose: (mutation) {
+                if (res != null) {
+                  res();
+                }
+              },
+              tryInitialize: false);
         });
       }
       if (onOpen != null) {
-        final res = onOpen(mutation);
+        final res = onOpen(mutation.key);
         if (res != null) {
-          mutation.addObserve(onClose: (mutation) {
-            res();
-          });
+          mutation.addObserve(
+              onClose: (mutation) {
+                res();
+              },
+              tryInitialize: false);
         }
       }
-      mutation.addObserve(onUpdateData: (data, {before}) {
-        _onUpdateData(key, data, before: before);
-        for (var observeKey in observeKeys) {
-          _onUpdateData(observeKey, data);
-        }
-      }, onUpdateError: (error, {before}) {
-        _onUpdateError(key, error, before: before);
-        for (var observeKey in observeKeys) {
-          _onUpdateError(observeKey, error);
-        }
-      }, onUpdateInitialized: () {
-        _onUpdateInitialized(key);
-        for (var observeKey in observeKeys) {
-          _onUpdateInitialized(observeKey);
-        }
-      }, onUpdateLoading: (loading) {
-        _onUpdateLoading(key, loading);
-        for (var observeKey in observeKeys) {
-          _onUpdateLoading(observeKey, loading);
-        }
-      }, onClose: (mutation) {
-        _onClose(key, mutation);
-        for (var observeKey in observeKeys) {
-          _onClose(observeKey, mutation);
-        }
-      });
+      mutation.addObserve(
+          onUpdateData: (data, {before}) {
+            _onUpdateData(key, data, before: before);
+            for (var observeKey in observeKeys) {
+              _onUpdateData(observeKey, data);
+            }
+          },
+          onUpdateError: (error, {before}) {
+            _onUpdateError(key, error, before: before);
+            for (var observeKey in observeKeys) {
+              _onUpdateError(observeKey, error);
+            }
+          },
+          onUpdateInitialized: () {
+            _onUpdateInitialized(key);
+            for (var observeKey in observeKeys) {
+              _onUpdateInitialized(observeKey);
+            }
+          },
+          onUpdateLoading: (loading) {
+            _onUpdateLoading(key, loading);
+            for (var observeKey in observeKeys) {
+              _onUpdateLoading(observeKey, loading);
+            }
+          },
+          onClose: (mutation) {
+            _onClose(key);
+            for (var observeKey in observeKeys) {
+              _onClose(observeKey);
+            }
+          },
+          tryInitialize: false);
       _data[key] = mutation;
       if (key.static) {
         _staticKeys.add(key);
