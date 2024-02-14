@@ -207,13 +207,13 @@ class Mutation<R> {
       _updateLoading(true);
       final data = await future;
       _updateData(data, append: append);
+      _updateInitialized();
       return data;
     } catch (e) {
       _updateError(e);
       rethrow;
     } finally {
       _updateLoading(false);
-      _updateInitialized();
     }
   }
 
