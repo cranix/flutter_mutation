@@ -1,4 +1,5 @@
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_mutation/hooks/use_mutation_key.dart';
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_cache.dart';
 import 'package:flutter_mutation/mutation_key.dart';
@@ -6,6 +7,7 @@ import 'package:flutter_mutation/mutation_types.dart';
 
 Mutation<R> useMutation<R>(
     {MutationKey<R>? key,
+    String? keyOf,
     MutationInitialValueCallback<R>? initialValue,
     MutationLazyInitialValueCallback<R>? lazyInitialValue,
     MutationOnUpdateDataCallback<R>? onUpdateData,
@@ -15,9 +17,9 @@ Mutation<R> useMutation<R>(
     MutationOnOpenCallback<R>? onOpen,
     MutationOnCloseCallback<R>? onClose,
     List<MutationKey<R>> observeKeys = const []}) {
-  final memoKey = useMemoized(() => key ?? MutationKey<R>(), [key]);
+  final mutationKey = useMutationKey(of: keyOf, key: key);
   final mutation = useMemoized(() {
-    final m = MutationCache.instance.retain<R>(memoKey,
+    final m = MutationCache.instance.retain<R>(mutationKey,
         initialValue: initialValue,
         lazyInitialValue: lazyInitialValue,
         onUpdateData: onUpdateData,
@@ -27,9 +29,9 @@ Mutation<R> useMutation<R>(
         onOpen: onOpen,
         onClose: onClose,
         observeKeys: observeKeys);
-    memoKey.setMutation(m);
+    mutationKey.setMutation(m);
     return m;
-  }, [memoKey]);
+  }, [mutationKey]);
   useEffect(() {
     if (mutation.isInitilized) {
       return;
@@ -43,7 +45,7 @@ Mutation<R> useMutation<R>(
   }, [mutation, lazyInitialValue]);
   useEffect(() {
     return () {
-      bool released = MutationCache.instance.release(memoKey);
+      bool released = MutationCache.instance.release(mutationKey);
       if (released) {
         mutation.close();
       }

@@ -1,10 +1,12 @@
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:flutter_mutation/hooks/use_listenable_notifier.dart';
 import 'package:flutter_mutation/hooks/use_mutation.dart';
 import 'package:flutter_mutation/mutation_key.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 R? useMutationData<R>(
     {MutationKey<R>? key,
+    String? keyOf,
     MutationInitialValueCallback<R>? initialValue,
     MutationLazyInitialValueCallback<R>? lazyInitialValue,
     MutationOnUpdateDataCallback<R>? onUpdateData,
@@ -16,6 +18,7 @@ R? useMutationData<R>(
     List<MutationKey<R>> observeKeys = const []}) {
   final mutation = useMutation(
       key: key,
+      keyOf: keyOf,
       initialValue: initialValue,
       lazyInitialValue: lazyInitialValue,
       onUpdateData: onUpdateData,
@@ -25,8 +28,7 @@ R? useMutationData<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useValueNotifier<R?>(mutation.data, [mutation]);
-  useListenable(state);
+  final state = useListenableNotifier<R?>(mutation.data, [mutation]);
   useEffect(() {
     final subscription =
         mutation.addObserve(onUpdateData: (R? data, {R? before}) {

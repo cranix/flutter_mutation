@@ -28,7 +28,7 @@ class DelayedPage extends HookWidget {
               children: [
                 HookBuilder(
                     builder: (context) {
-                      final key = useMutationKey<bool>("aa_1");
+                      final key = useMutationKey<bool>(of: "aa_1");
                       final data = useMutationData(
                           key: key,
                           onUpdateData: (data, {before}) {
@@ -47,7 +47,7 @@ class DelayedPage extends HookWidget {
                 ),
                 HookBuilder(
                     builder: (context) {
-                      final key = useMutationKey<bool>("aa_2");
+                      final key = useMutationKey<bool>(of: "aa_2");
                       final data = useMutationData(
                           key: key,
                           onUpdateData: (data, {before}) {
@@ -66,7 +66,7 @@ class DelayedPage extends HookWidget {
                 ),
                 HookBuilder(
                   builder: (context) {
-                    final key = useMutationKey<bool>("aa_3");
+                    final key = useMutationKey<bool>(of: "aa_3");
                     final data = useMutationData(
                         key: key,
                         onUpdateData: (data, {before}) {

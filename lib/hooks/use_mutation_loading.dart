@@ -1,10 +1,12 @@
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/hooks/use_mutation.dart';
+import 'package:flutter_mutation/hooks/use_listenable_notifier.dart';
 import 'package:flutter_mutation/mutation_key.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 bool useMutationLoading<R>(
     {MutationKey<R>? key,
+    String? keyOf,
     MutationInitialValueCallback<R>? initialValue,
     MutationLazyInitialValueCallback<R>? lazyInitialValue,
     MutationOnUpdateDataCallback<R>? onUpdateData,
@@ -16,6 +18,7 @@ bool useMutationLoading<R>(
     List<MutationKey<R>> observeKeys = const []}) {
   final mutation = useMutation(
       key: key,
+      keyOf: keyOf,
       initialValue: initialValue,
       lazyInitialValue: lazyInitialValue,
       onUpdateData: onUpdateData,
@@ -25,8 +28,7 @@ bool useMutationLoading<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useValueNotifier<bool>(mutation.isLoading, [mutation]);
-  useListenable(state);
+  final state = useListenableNotifier<bool>(mutation.isLoading, [mutation]);
   useEffect(() {
     final subscription = mutation.addObserve(onUpdateLoading: (bool loading) {
       state.value = loading;
