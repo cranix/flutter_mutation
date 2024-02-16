@@ -7,17 +7,17 @@ import 'package:flutter_mutation/mutation_cache_subscription.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 class MutationKey<R> {
-  late Mutation<R> _mutation;
+  Mutation<R>? _mutation;
 
-  R? get data => _mutation.data;
+  R? get data => _mutation?.data;
 
-  List<R> get dataList => _mutation.dataList;
+  List<R> get dataList => _mutation?.dataList ?? [];
 
-  Object? get error => _mutation.error;
+  Object? get error => _mutation?.error;
 
-  bool get isLoading => _mutation.isLoading;
+  bool get isLoading => _mutation?.isLoading ?? false;
 
-  bool get isInitialized => _mutation.isInitilized;
+  bool get isInitialized => _mutation?.isInitilized ?? false;
 
   static final Map<String, MutationKey> _keyStore = {};
 
@@ -63,28 +63,31 @@ class MutationKey<R> {
   }
 
   Future<R> mutate(FutureOr<R> future, {bool append = false}) {
-    return _mutation.mutate(future, append: append);
+    return _mutation!.mutate(future, append: append);
   }
 
   Future<bool> updateInitialize(MutationLazyInitialValueCallback<R> callback) {
-    return _mutation.updateInitialize(callback);
+    return _mutation!.updateInitialize(callback);
   }
 
-  bool? clear() {
-    return _mutation.clear();
+  bool clear() {
+    return _mutation?.clear() ?? false;
   }
 
-  bool? clearError() {
-    return _mutation.clearError();
+  bool clearError() {
+    return _mutation?.clearError() ?? false;
   }
 
-  bool? clearData() {
-    return _mutation.clearData();
+  bool clearData() {
+    return _mutation?.clearData() ?? false;
   }
 
   void close() {
-    _mutation.close();
-    MutationCache.instance.remove(this);
+    _mutation?.close();
+  }
+
+  bool release() {
+    return MutationCache.instance.release(this);
   }
 
   MutationCacheSubscription<R> observe({
