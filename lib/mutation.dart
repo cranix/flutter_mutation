@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter_mutation/exception/mutation_closed_exception.dart';
 import 'package:flutter_mutation/exception/mutation_exception.dart';
 import 'package:flutter_mutation/mutation_key.dart';
-import 'package:flutter_mutation/mutation_subscription.dart';
 
 import 'mutation_types.dart';
 
@@ -77,13 +76,12 @@ class Mutation<R> {
     if (initialValue != null) {
       _updateData(initialValue());
       _updateInitialized();
-    }
-    else {
+    } else {
       _lazyInitialValue = lazyInitialValue;
     }
   }
 
-  MutationSubscription<R> addObserve({
+  MutationCancelFunction addObserve({
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
@@ -109,12 +107,14 @@ class Mutation<R> {
     if (tryInitialize) {
       lazyInitialize();
     }
-    return MutationSubscription(key,
-        onUpdateInitialized: onUpdateInitialized,
-        onUpdateData: onUpdateData,
-        onUpdateError: onUpdateError,
-        onUpdateLoading: onUpdateLoading,
-        onClose: onClose);
+    return () {
+      removeObserve(
+          onUpdateInitialized: onUpdateInitialized,
+          onUpdateData: onUpdateData,
+          onUpdateError: onUpdateError,
+          onUpdateLoading: onUpdateLoading,
+          onClose: onClose);
+    };
   }
 
   void removeObserve({

@@ -30,11 +30,9 @@ R? useMutationData<R>(
       observeKeys: observeKeys);
   final state = useListenableNotifier<R?>(mutation.data, [mutation]);
   useEffect(() {
-    final subscription =
-        mutation.addObserve(onUpdateData: (R? data, {R? before}) {
+    return mutation.addObserve(onUpdateData: (R? data, {R? before}) {
       state.value = data;
     });
-    return subscription.cancel;
   }, [mutation]);
   return state.value;
 }

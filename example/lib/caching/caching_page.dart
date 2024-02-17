@@ -18,13 +18,9 @@ class CachingPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     useEffect(() {
-      final subscription = cacheKey.observe(onClose: (mutation) {
+      return cacheKey.observe(onClose: (mutation) {
         print("closed:$mutation");
       });
-      return () {
-        subscription.cancel();
-        print("disposed:$cacheKey");
-      };
     }, [cacheKey]);
     final onPressRefresh = useCallback(() async {
       await CachingApi.get().mutate(cacheKey);

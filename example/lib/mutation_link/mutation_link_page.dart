@@ -17,21 +17,12 @@ class MutationLinkPage extends HookWidget {
     final mutationKey1 = useMutationKey<String>();
     final mutationKey2 = useMutationKey<String>();
     useEffect(() {
-      final subscription2 = mutationKey2.observe(onOpen: (key) {
+      return mutationKey2.observe(onOpen: (key) {
         print("onOpen:$key");
-        final subscription1 =
-            mutationKey1.observe(onUpdateData: (data, {before}) {
+        return mutationKey1.observe(onUpdateData: (data, {before}) {
           MutationLinkApi.get2().mutate(key);
         });
-        return () {
-          subscription1.cancel();
-          print("onDispose: subscription1");
-        };
       });
-      return () {
-        subscription2.cancel();
-        print("onDispose: subscription2");
-      };
     }, [mutationKey2]);
 
     final onPressed = useCallback(() {

@@ -1,6 +1,5 @@
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_key.dart';
-import 'package:flutter_mutation/mutation_cache_subscription.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 enum EventKey { DATA, ERROR, INITIALIZED, LOADING, OPEN, CLOSE }
@@ -44,7 +43,7 @@ class MutationCache {
     return res;
   }
 
-  MutationCacheSubscription<R> addObserve<R>(
+  MutationCancelFunction addObserve<R>(
     MutationKey<R> key, {
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
@@ -77,14 +76,15 @@ class MutationCache {
       final list = _getOrNewMapList(EventKey.CLOSE, key);
       list.add(onClose);
     }
-
-    return MutationCacheSubscription(key,
-        onUpdateData: onUpdateData,
-        onUpdateError: onUpdateError,
-        onUpdateInitialized: onUpdateInitialized,
-        onUpdateLoading: onUpdateLoading,
-        onOpen: onOpen,
-        onClose: onClose);
+    return () {
+      removeObserve(key,
+          onUpdateData: onUpdateData,
+          onUpdateError: onUpdateError,
+          onUpdateInitialized: onUpdateInitialized,
+          onUpdateLoading: onUpdateLoading,
+          onOpen: onOpen,
+          onClose: onClose);
+    };
   }
 
   bool removeObserve<R>(
@@ -140,7 +140,7 @@ class MutationCache {
     _onEventMapListMap[EventKey.CLOSE]?[key]?.forEach((e) => e(key));
   }
 
-  Mutation<R> retain<R>(MutationKey<R> key,
+  Mutation<R> getOrOpen<R>(MutationKey<R> key,
       {MutationInitialValueCallback<R>? initialValue,
       MutationLazyInitialValueCallback<R>? lazyInitialValue,
       MutationOnUpdateDataCallback<R>? onUpdateData,
@@ -226,7 +226,31 @@ class MutationCache {
           },
           tryInitialize: false);
       _data[key] = mutation;
+      _retainCount[key] = 0;
     }
+    return mutation;
+  }
+
+  Mutation<R> retain<R>(MutationKey<R> key,
+      {MutationInitialValueCallback<R>? initialValue,
+      MutationLazyInitialValueCallback<R>? lazyInitialValue,
+      MutationOnUpdateDataCallback<R>? onUpdateData,
+      MutationOnUpdateErrorCallback? onUpdateError,
+      MutationOnUpdateInitializedCallback? onUpdateInitialized,
+      MutationOnUpdateLoadingCallback? onUpdateLoading,
+      MutationOnOpenCallback<R>? onOpen,
+      MutationOnCloseCallback<R>? onClose,
+      List<MutationKey<R>> observeKeys = const []}) {
+    final mutation = getOrOpen(key,
+        initialValue: initialValue,
+        lazyInitialValue: lazyInitialValue,
+        onUpdateData: onUpdateData,
+        onUpdateError: onUpdateError,
+        onUpdateInitialized: onUpdateInitialized,
+        onUpdateLoading: onUpdateLoading,
+        onOpen: onOpen,
+        onClose: onClose,
+        observeKeys: observeKeys);
     _retainCount[key] = (_retainCount[key] ?? 0) + 1;
     return mutation;
   }

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_cache.dart';
-import 'package:flutter_mutation/mutation_cache_subscription.dart';
 import 'package:flutter_mutation/mutation_types.dart';
 
 class MutationKey<R> {
@@ -21,8 +20,7 @@ class MutationKey<R> {
 
   static final Map<String, MutationKey> _keyStore = {};
 
-
-  MutationKey<R> retain(
+  MutationKey<R> open(
       {MutationInitialValueCallback<R>? initialValue,
       MutationLazyInitialValueCallback<R>? lazyInitialValue,
       MutationOnUpdateDataCallback<R>? onUpdateData,
@@ -32,6 +30,29 @@ class MutationKey<R> {
       MutationOnOpenCallback<R>? onOpen,
       MutationOnCloseCallback<R>? onClose,
       List<MutationKey<R>> observeKeys = const []}) {
+    _mutation = MutationCache.instance.getOrOpen(this,
+        initialValue: initialValue,
+        lazyInitialValue: lazyInitialValue,
+        onUpdateData: onUpdateData,
+        onUpdateError: onUpdateError,
+        onUpdateInitialized: onUpdateInitialized,
+        onUpdateLoading: onUpdateLoading,
+        onOpen: onOpen,
+        onClose: onClose,
+        observeKeys: observeKeys);
+    return this;
+  }
+
+  MutationKey<R> retain(
+      {MutationInitialValueCallback<R>? initialValue,
+        MutationLazyInitialValueCallback<R>? lazyInitialValue,
+        MutationOnUpdateDataCallback<R>? onUpdateData,
+        MutationOnUpdateErrorCallback? onUpdateError,
+        MutationOnUpdateInitializedCallback? onUpdateInitialized,
+        MutationOnUpdateLoadingCallback? onUpdateLoading,
+        MutationOnOpenCallback<R>? onOpen,
+        MutationOnCloseCallback<R>? onClose,
+        List<MutationKey<R>> observeKeys = const []}) {
     _mutation = MutationCache.instance.retain(this,
         initialValue: initialValue,
         lazyInitialValue: lazyInitialValue,
@@ -90,7 +111,7 @@ class MutationKey<R> {
     return MutationCache.instance.release(this);
   }
 
-  MutationCacheSubscription<R> observe({
+  MutationCancelFunction observe({
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,

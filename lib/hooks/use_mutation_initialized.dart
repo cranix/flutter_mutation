@@ -28,12 +28,12 @@ bool useMutationInitialized<R>(
       onOpen: onOpen,
       onClose: onClose,
       observeKeys: observeKeys);
-  final state = useListenableNotifier<bool>(key?.isInitialized ?? false, [mutation]);
+  final state =
+      useListenableNotifier<bool>(key?.isInitialized ?? false, [mutation]);
   useEffect(() {
-    final subscription = mutation.addObserve(onUpdateInitialized: () {
+    return mutation.addObserve(onUpdateInitialized: () {
       state.value = true;
     });
-    return subscription.cancel;
   }, [mutation]);
   return state.value;
 }
