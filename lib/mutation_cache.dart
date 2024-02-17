@@ -43,28 +43,41 @@ class MutationCache {
     return res;
   }
 
-  MutationCancelFunction addObserve<R>(
-    MutationKey<R> key, {
-    MutationOnUpdateDataCallback<R>? onUpdateData,
-    MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializedCallback? onUpdateInitialized,
-    MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnOpenCallback<R>? onOpen,
-    MutationOnCloseCallback<R>? onClose,
-  }) {
+  MutationCancelFunction addObserve<R>(MutationKey<R> key,
+      {MutationOnUpdateDataCallback<R>? onUpdateData,
+      MutationOnUpdateErrorCallback? onUpdateError,
+      MutationOnUpdateInitializedCallback? onUpdateInitialized,
+      MutationOnUpdateLoadingCallback? onUpdateLoading,
+      MutationOnOpenCallback<R>? onOpen,
+      MutationOnCloseCallback<R>? onClose,
+      initialCall = false}) {
     if (onUpdateData != null) {
+      if (initialCall) {
+        onUpdateData(key.data, before: key.data);
+      }
       final list = _getOrNewMapList(EventKey.DATA, key);
       list.add(onUpdateData);
     }
     if (onUpdateError != null) {
+      if (initialCall) {
+        onUpdateError(key.error, before: key.error);
+      }
       final list = _getOrNewMapList(EventKey.ERROR, key);
       list.add(onUpdateError);
     }
     if (onUpdateInitialized != null) {
+      if (initialCall) {
+        if (key.isInitialized) {
+          onUpdateInitialized();
+        }
+      }
       final list = _getOrNewMapList(EventKey.INITIALIZED, key);
       list.add(onUpdateInitialized);
     }
     if (onUpdateLoading != null) {
+      if (initialCall) {
+        onUpdateLoading(key.isLoading);
+      }
       final list = _getOrNewMapList(EventKey.LOADING, key);
       list.add(onUpdateLoading);
     }
@@ -162,7 +175,7 @@ class MutationCache {
           onClose: onClose);
 
       _onEventMapListMap[EventKey.OPEN]?[key]?.forEach((e) {
-        final res = e(mutation?.key);
+        final res = e(mutation);
         mutation?.addObserve(
             onClose: (mutation) {
               if (res != null) {
@@ -173,7 +186,7 @@ class MutationCache {
       });
       for (var observeKey in observeKeys) {
         _onEventMapListMap[EventKey.OPEN]?[observeKey]?.forEach((e) {
-          final res = e(mutation?.key);
+          final res = e(mutation);
           mutation?.addObserve(
               onClose: (mutation) {
                 if (res != null) {
@@ -184,7 +197,7 @@ class MutationCache {
         });
       }
       if (onOpen != null) {
-        final res = onOpen(mutation.key);
+        final res = onOpen(mutation);
         if (res != null) {
           mutation.addObserve(
               onClose: (mutation) {

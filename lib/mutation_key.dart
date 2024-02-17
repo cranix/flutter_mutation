@@ -45,14 +45,14 @@ class MutationKey<R> {
 
   MutationKey<R> retain(
       {MutationInitialValueCallback<R>? initialValue,
-        MutationLazyInitialValueCallback<R>? lazyInitialValue,
-        MutationOnUpdateDataCallback<R>? onUpdateData,
-        MutationOnUpdateErrorCallback? onUpdateError,
-        MutationOnUpdateInitializedCallback? onUpdateInitialized,
-        MutationOnUpdateLoadingCallback? onUpdateLoading,
-        MutationOnOpenCallback<R>? onOpen,
-        MutationOnCloseCallback<R>? onClose,
-        List<MutationKey<R>> observeKeys = const []}) {
+      MutationLazyInitialValueCallback<R>? lazyInitialValue,
+      MutationOnUpdateDataCallback<R>? onUpdateData,
+      MutationOnUpdateErrorCallback? onUpdateError,
+      MutationOnUpdateInitializedCallback? onUpdateInitialized,
+      MutationOnUpdateLoadingCallback? onUpdateLoading,
+      MutationOnOpenCallback<R>? onOpen,
+      MutationOnCloseCallback<R>? onClose,
+      List<MutationKey<R>> observeKeys = const []}) {
     _mutation = MutationCache.instance.retain(this,
         initialValue: initialValue,
         lazyInitialValue: lazyInitialValue,
@@ -86,9 +86,15 @@ class MutationKey<R> {
   Future<R> mutate(FutureOr<R> future, {bool append = false}) {
     return _mutation!.mutate(future, append: append);
   }
+  Future<R>? tryMutate(FutureOr<R> future, {bool append = false}) {
+    return _mutation?.mutate(future, append: append);
+  }
 
   Future<bool> updateInitialize(MutationLazyInitialValueCallback<R> callback) {
     return _mutation!.updateInitialize(callback);
+  }
+  Future<bool>? tryUpdateInitialize(MutationLazyInitialValueCallback<R> callback) {
+    return _mutation?.updateInitialize(callback);
   }
 
   bool clear() {
@@ -111,20 +117,21 @@ class MutationKey<R> {
     return MutationCache.instance.release(this);
   }
 
-  MutationCancelFunction observe({
-    MutationOnUpdateDataCallback<R>? onUpdateData,
-    MutationOnUpdateErrorCallback? onUpdateError,
-    MutationOnUpdateInitializedCallback? onUpdateInitialized,
-    MutationOnUpdateLoadingCallback? onUpdateLoading,
-    MutationOnOpenCallback<R>? onOpen,
-    MutationOnCloseCallback<R>? onClose,
-  }) {
+  MutationCancelFunction observe(
+      {MutationOnUpdateDataCallback<R>? onUpdateData,
+      MutationOnUpdateErrorCallback? onUpdateError,
+      MutationOnUpdateInitializedCallback? onUpdateInitialized,
+      MutationOnUpdateLoadingCallback? onUpdateLoading,
+      MutationOnOpenCallback<R>? onOpen,
+      MutationOnCloseCallback<R>? onClose,
+      bool initialCall = false}) {
     return MutationCache.instance.addObserve(this,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
         onUpdateLoading: onUpdateLoading,
         onOpen: onOpen,
-        onClose: onClose);
+        onClose: onClose,
+        initialCall: initialCall);
   }
 }

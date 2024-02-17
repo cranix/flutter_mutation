@@ -17,10 +17,10 @@ class MutationLinkPage extends HookWidget {
     final mutationKey1 = useMutationKey<String>();
     final mutationKey2 = useMutationKey<String>();
     useEffect(() {
-      return mutationKey2.observe(onOpen: (key) {
-        print("onOpen:$key");
+      return mutationKey2.observe(onOpen: (mutation) {
+        print("onOpen:$mutation");
         return mutationKey1.observe(onUpdateData: (data, {before}) {
-          MutationLinkApi.get2().mutate(key);
+          MutationLinkApi.get2().mutate(mutationKey2);
         });
       });
     }, [mutationKey2]);

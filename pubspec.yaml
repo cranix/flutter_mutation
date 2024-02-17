@@ -1,6 +1,6 @@
 name: flutter_mutation
 description: easy to use flutter async state with hook
-version: 0.4.9
+version: 0.5.0
 repository: https://github.com/cranix/flutter_mutation
 
 environment:

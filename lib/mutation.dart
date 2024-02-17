@@ -274,7 +274,7 @@ class Mutation<R> {
     }
     _closed = true;
     for (var element in _onCloseList) {
-      element(key);
+      element(this);
     }
   }
 }
