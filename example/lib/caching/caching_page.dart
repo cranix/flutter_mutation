@@ -43,7 +43,7 @@ class CachingPage extends HookWidget {
                 }),
             HookBuilder(builder: (context) {
               final data = useMutationData(
-                  key: cacheKey, lazyInitialValue: CachingApi.get);
+                  key: cacheKey, lazyInitialData: CachingApi.get);
               return Text("title:${data?.title}");
             }),
             TextButton(onPressed: onPressRefresh, child: const Text("refresh")),

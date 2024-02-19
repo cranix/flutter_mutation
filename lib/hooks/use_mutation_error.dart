@@ -7,8 +7,8 @@ import 'package:flutter_mutation/mutation_types.dart';
 Object? useMutationError<R>(
     {MutationKey<R>? key,
     String? keyOf,
-    MutationInitialValueCallback<R>? initialValue,
-    MutationLazyInitialValueCallback<R>? lazyInitialValue,
+    MutationInitialDataCallback<R>? initialData,
+    MutationLazyInitialDataCallback<R>? lazyInitialData,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -20,8 +20,8 @@ Object? useMutationError<R>(
   final mutation = useMutation(
       key: key,
       keyOf: keyOf,
-      initialValue: initialValue,
-      lazyInitialValue: lazyInitialValue,
+      initialData: initialData,
+      lazyInitialData: lazyInitialData,
       onUpdateData: onUpdateData,
       onUpdateError: onUpdateError,
       onUpdateInitialized: onUpdateInitialized,

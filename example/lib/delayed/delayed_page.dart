@@ -34,7 +34,7 @@ class DelayedPage extends HookWidget {
                           onUpdateData: (data, {before}) {
                             print("onUpdateData:$data");
                           },
-                          initialValue: () {
+                          initialData: () {
                             Future.delayed(Duration(milliseconds: 5000), () {
                               print("mutationDelayed:$key");
                               key.mutate(false);
@@ -53,7 +53,7 @@ class DelayedPage extends HookWidget {
                           onUpdateData: (data, {before}) {
                             print("onUpdateData:$data");
                           },
-                          initialValue: () {
+                          initialData: () {
                             Future.delayed(Duration(milliseconds: 5000), () {
                               print("mutationDelayed:$key");
                               key.mutate(false);
@@ -72,7 +72,7 @@ class DelayedPage extends HookWidget {
                         onUpdateData: (data, {before}) {
                           print("onUpdateData:$data");
                         },
-                        initialValue: () {
+                        initialData: () {
                           Future.delayed(Duration(milliseconds: 5000), () {
                             print("mutationDelayed:$key");
                             key.mutate(false);

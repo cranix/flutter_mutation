@@ -8,8 +8,8 @@ import 'package:flutter_mutation/mutation_types.dart';
 Mutation<R> useMutation<R>(
     {MutationKey<R>? key,
     String? keyOf,
-    MutationInitialValueCallback<R>? initialValue,
-    MutationLazyInitialValueCallback<R>? lazyInitialValue,
+    MutationInitialDataCallback<R>? initialData,
+    MutationLazyInitialDataCallback<R>? lazyInitialData,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -20,8 +20,8 @@ Mutation<R> useMutation<R>(
   final mutationKey = useMutationKey(of: keyOf, key: key);
   final mutation = useMemoized(() {
     final m = MutationCache.instance.retain<R>(mutationKey,
-        initialValue: initialValue,
-        lazyInitialValue: lazyInitialValue,
+        initialData: initialData,
+        lazyInitialData: lazyInitialData,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
@@ -36,13 +36,13 @@ Mutation<R> useMutation<R>(
     if (mutation.isInitilized) {
       return;
     }
-    if (lazyInitialValue == null) {
+    if (lazyInitialData == null) {
       return;
     }
     Future.delayed(Duration.zero, () {
-      mutation.updateInitialize(lazyInitialValue);
+      mutation.updateInitialize(lazyInitialData);
     });
-  }, [mutation, lazyInitialValue]);
+  }, [mutation, lazyInitialData]);
   useEffect(() {
     return () {
       bool released = MutationCache.instance.release(mutationKey);

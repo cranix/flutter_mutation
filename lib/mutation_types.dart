@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:core';
 
 import 'package:flutter_mutation/mutation.dart';
 
@@ -10,7 +11,8 @@ typedef MutationOnUpdateErrorCallback = void Function(Object? error,
     {Object? before});
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
 typedef MutationOnUpdateInitializedCallback = void Function();
-typedef MutationLazyInitialValueCallback<R> = FutureOr<R?> Function();
-typedef MutationInitialValueCallback<R> = R? Function();
+typedef MutationLazyInitialDataCallback<R> = FutureOr<R?> Function();
+typedef MutationInitialDataCallback<R> = R? Function();
 
 typedef MutationCancelFunction = void Function();
+typedef MutationLazyMutateCallback<R> = FutureOr<R?> Function();

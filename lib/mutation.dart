@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:collection';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_mutation/exception/mutation_closed_exception.dart';
 import 'package:flutter_mutation/exception/mutation_exception.dart';
 import 'package:flutter_mutation/mutation_key.dart';
@@ -45,11 +47,14 @@ class Mutation<R> {
   final List<MutationOnUpdateLoadingCallback> _onUpdateLoadingList = [];
   final List<MutationOnCloseCallback<R>> _onCloseList = [];
 
-  MutationLazyInitialValueCallback<R>? _lazyInitialValue;
+  MutationLazyInitialDataCallback<R>? _lazyInitialData;
+  MutationLazyMutateCallback<R>? _lazyMutateCallback;
+  MutationLazyMutateCallback<R>? _lazyMutateAppendCallback;
+  final List<bool> _autoDisposableList = [];
 
   Mutation(this.key,
-      {MutationInitialValueCallback<R>? initialValue,
-      MutationLazyInitialValueCallback<R>? lazyInitialValue,
+      {MutationInitialDataCallback<R>? initialData,
+      MutationLazyInitialDataCallback<R>? lazyInitialData,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
@@ -70,14 +75,14 @@ class Mutation<R> {
     if (onClose != null) {
       _onCloseList.add(onClose);
     }
-    if (initialValue != null && lazyInitialValue != null) {
-      throw const MutationException("initialValue and lazyInitialValue set!");
+    if (initialData != null && lazyInitialData != null) {
+      throw const MutationException("initialData and lazyInitialData set!");
     }
-    if (initialValue != null) {
-      _updateData(initialValue());
+    if (initialData != null) {
+      _updateData(initialData());
       _updateInitialized();
     } else {
-      _lazyInitialValue = lazyInitialValue;
+      _lazyInitialData = lazyInitialData;
     }
   }
 
@@ -87,7 +92,7 @@ class Mutation<R> {
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnCloseCallback<R>? onClose,
-    bool tryInitialize = true,
+    bool autoDisposable = true,
   }) {
     if (onUpdateInitialized != null) {
       _onUpdateInitializedList.add(onUpdateInitialized);
@@ -104,11 +109,25 @@ class Mutation<R> {
     if (onClose != null) {
       _onCloseList.add(onClose);
     }
-    if (tryInitialize) {
+    if (autoDisposable) {
       lazyInitialize();
     }
+    _autoDisposableList.add(autoDisposable);
+
+    if (_autoDisposableList.contains(true)) {
+      if (_lazyMutateCallback != null) {
+        final data = _lazyMutateCallback!();
+        tryMutate(data);
+      }
+      if (_lazyMutateAppendCallback != null) {
+        final data = _lazyMutateAppendCallback!();
+        tryMutate(data, append: true);
+      }
+    }
+
     return () {
-      removeObserve(
+      _autoDisposableList.removeLast();
+      _removeObserve(
           onUpdateInitialized: onUpdateInitialized,
           onUpdateData: onUpdateData,
           onUpdateError: onUpdateError,
@@ -117,7 +136,7 @@ class Mutation<R> {
     };
   }
 
-  void removeObserve({
+  void _removeObserve({
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
@@ -199,6 +218,24 @@ class Mutation<R> {
     return true;
   }
 
+  Future<bool> lazyMutate(MutationLazyMutateCallback<R> callback,
+      {bool append = false}) async {
+    if (_autoDisposableList.contains(true)) {
+      final data = callback();
+      await tryMutate(data, append: append);
+      return true;
+    } else {
+      if (append) {
+        _lazyMutateCallback = null;
+        _lazyMutateAppendCallback = callback;
+      } else {
+        _lazyMutateCallback = callback;
+        _lazyMutateAppendCallback = null;
+      }
+    }
+    return false;
+  }
+
   Future<R> mutate(FutureOr<R> future, {bool append = false}) async {
     return (await tryMutate(future, append: append))!;
   }
@@ -208,6 +245,8 @@ class Mutation<R> {
       throw const MutationClosedException();
     }
     try {
+      _lazyMutateCallback = null;
+      _lazyMutateAppendCallback = null;
       _updateLoading(true);
       final data = await future;
       _updateData(data, append: append);
@@ -222,7 +261,7 @@ class Mutation<R> {
   }
 
   Future<bool> updateInitialize(
-      MutationLazyInitialValueCallback<R> callback) async {
+      MutationLazyInitialDataCallback<R> callback) async {
     if (_closed) {
       throw const MutationClosedException();
     }
@@ -230,8 +269,8 @@ class Mutation<R> {
       return false;
     }
     _lazyInitializeStarted = true;
-    _lazyInitialValue = callback;
-    await tryMutate(_lazyInitialValue!());
+    _lazyInitialData = callback;
+    await tryMutate(_lazyInitialData!());
     return true;
   }
 
@@ -239,11 +278,11 @@ class Mutation<R> {
     if (_closed) {
       throw const MutationClosedException();
     }
-    if (_initialized || _lazyInitializeStarted || _lazyInitialValue == null) {
+    if (_initialized || _lazyInitializeStarted || _lazyInitialData == null) {
       return false;
     }
     _lazyInitializeStarted = true;
-    await tryMutate(_lazyInitialValue!());
+    await tryMutate(_lazyInitialData!());
     return true;
   }
 

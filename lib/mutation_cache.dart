@@ -149,13 +149,13 @@ class MutationCache {
         ?.forEach((e) => e(loading));
   }
 
-  _onClose(MutationKey key) {
-    _onEventMapListMap[EventKey.CLOSE]?[key]?.forEach((e) => e(key));
+  _onClose(MutationKey key, Mutation mutation) {
+    _onEventMapListMap[EventKey.CLOSE]?[key]?.forEach((e) => e(mutation));
   }
 
   Mutation<R> getOrOpen<R>(MutationKey<R> key,
-      {MutationInitialValueCallback<R>? initialValue,
-      MutationLazyInitialValueCallback<R>? lazyInitialValue,
+      {MutationInitialDataCallback<R>? initialData,
+      MutationLazyInitialDataCallback<R>? lazyInitialData,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -166,8 +166,8 @@ class MutationCache {
     var mutation = _data[key] as Mutation<R>?;
     if (mutation == null) {
       mutation = Mutation<R>(key,
-          initialValue: initialValue,
-          lazyInitialValue: lazyInitialValue,
+          initialData: initialData,
+          lazyInitialData: lazyInitialData,
           onUpdateData: onUpdateData,
           onUpdateError: onUpdateError,
           onUpdateInitialized: onUpdateInitialized,
@@ -176,24 +176,24 @@ class MutationCache {
 
       _onEventMapListMap[EventKey.OPEN]?[key]?.forEach((e) {
         final res = e(mutation);
-        mutation?.addObserve(
-            onClose: (mutation) {
-              if (res != null) {
+        if (res != null) {
+          mutation?.addObserve(
+              onClose: (mutation) {
                 res();
-              }
-            },
-            tryInitialize: false);
+              },
+              autoDisposable: false);
+        }
       });
       for (var observeKey in observeKeys) {
         _onEventMapListMap[EventKey.OPEN]?[observeKey]?.forEach((e) {
           final res = e(mutation);
-          mutation?.addObserve(
-              onClose: (mutation) {
-                if (res != null) {
+          if (res != null) {
+            mutation?.addObserve(
+                onClose: (mutation) {
                   res();
-                }
-              },
-              tryInitialize: false);
+                },
+                autoDisposable: false);
+          }
         });
       }
       if (onOpen != null) {
@@ -203,20 +203,20 @@ class MutationCache {
               onClose: (mutation) {
                 res();
               },
-              tryInitialize: false);
+              autoDisposable: false);
         }
       }
       mutation.addObserve(
           onUpdateData: (data, {before}) {
             _onUpdateData(key, data, before: before);
             for (var observeKey in observeKeys) {
-              _onUpdateData(observeKey, data);
+              _onUpdateData(observeKey, data, before: before);
             }
           },
           onUpdateError: (error, {before}) {
             _onUpdateError(key, error, before: before);
             for (var observeKey in observeKeys) {
-              _onUpdateError(observeKey, error);
+              _onUpdateError(observeKey, error, before: before);
             }
           },
           onUpdateInitialized: () {
@@ -232,12 +232,12 @@ class MutationCache {
             }
           },
           onClose: (mutation) {
-            _onClose(key);
+            _onClose(key, mutation);
             for (var observeKey in observeKeys) {
-              _onClose(observeKey);
+              _onClose(observeKey, mutation);
             }
           },
-          tryInitialize: false);
+          autoDisposable: false);
       _data[key] = mutation;
       _retainCount[key] = 0;
     }
@@ -245,8 +245,8 @@ class MutationCache {
   }
 
   Mutation<R> retain<R>(MutationKey<R> key,
-      {MutationInitialValueCallback<R>? initialValue,
-      MutationLazyInitialValueCallback<R>? lazyInitialValue,
+      {MutationInitialDataCallback<R>? initialData,
+      MutationLazyInitialDataCallback<R>? lazyInitialData,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -255,8 +255,8 @@ class MutationCache {
       MutationOnCloseCallback<R>? onClose,
       List<MutationKey<R>> observeKeys = const []}) {
     final mutation = getOrOpen(key,
-        initialValue: initialValue,
-        lazyInitialValue: lazyInitialValue,
+        initialData: initialData,
+        lazyInitialData: lazyInitialData,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,

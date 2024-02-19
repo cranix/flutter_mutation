@@ -16,7 +16,7 @@ class AsyncGet2Page extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final data = useMutationData(
-        lazyInitialValue: AsyncGet2Api.get
+        lazyInitialData: AsyncGet2Api.get
     );
     return Scaffold(
       appBar: AppBar(

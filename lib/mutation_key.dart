@@ -21,8 +21,8 @@ class MutationKey<R> {
   static final Map<String, MutationKey> _keyStore = {};
 
   MutationKey<R> open(
-      {MutationInitialValueCallback<R>? initialValue,
-      MutationLazyInitialValueCallback<R>? lazyInitialValue,
+      {MutationInitialDataCallback<R>? initialData,
+      MutationLazyInitialDataCallback<R>? lazyInitialData,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -31,8 +31,8 @@ class MutationKey<R> {
       MutationOnCloseCallback<R>? onClose,
       List<MutationKey<R>> observeKeys = const []}) {
     _mutation = MutationCache.instance.getOrOpen(this,
-        initialValue: initialValue,
-        lazyInitialValue: lazyInitialValue,
+        initialData: initialData,
+        lazyInitialData: lazyInitialData,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
@@ -44,8 +44,8 @@ class MutationKey<R> {
   }
 
   MutationKey<R> retain(
-      {MutationInitialValueCallback<R>? initialValue,
-      MutationLazyInitialValueCallback<R>? lazyInitialValue,
+      {MutationInitialDataCallback<R>? initialData,
+      MutationLazyInitialDataCallback<R>? lazyInitialData,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -54,8 +54,8 @@ class MutationKey<R> {
       MutationOnCloseCallback<R>? onClose,
       List<MutationKey<R>> observeKeys = const []}) {
     _mutation = MutationCache.instance.retain(this,
-        initialValue: initialValue,
-        lazyInitialValue: lazyInitialValue,
+        initialData: initialData,
+        lazyInitialData: lazyInitialData,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
@@ -83,17 +83,30 @@ class MutationKey<R> {
     return shortHash(this);
   }
 
+  Future<bool> lazyMutate(MutationLazyMutateCallback<R> callback,
+      {bool append = false}) {
+    return _mutation!.lazyMutate(callback, append: append);
+  }
+
+  Future<bool>? tryLazyMutate(MutationLazyMutateCallback<R> callback,
+      {bool append = false}) {
+    return _mutation?.lazyMutate(callback, append: append);
+  }
+
   Future<R> mutate(FutureOr<R> future, {bool append = false}) {
     return _mutation!.mutate(future, append: append);
   }
+
   Future<R>? tryMutate(FutureOr<R> future, {bool append = false}) {
     return _mutation?.mutate(future, append: append);
   }
 
-  Future<bool> updateInitialize(MutationLazyInitialValueCallback<R> callback) {
+  Future<bool> updateInitialize(MutationLazyInitialDataCallback<R> callback) {
     return _mutation!.updateInitialize(callback);
   }
-  Future<bool>? tryUpdateInitialize(MutationLazyInitialValueCallback<R> callback) {
+
+  Future<bool>? tryUpdateInitialize(
+      MutationLazyInitialDataCallback<R> callback) {
     return _mutation?.updateInitialize(callback);
   }
 
