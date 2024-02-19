@@ -200,6 +200,10 @@ class Mutation<R> {
   }
 
   Future<R> mutate(FutureOr<R> future, {bool append = false}) async {
+    return (await tryMutate(future, append: append))!;
+  }
+
+  Future<R?> tryMutate(FutureOr<R?> future, {bool append = false}) async {
     if (_closed) {
       throw const MutationClosedException();
     }
@@ -227,7 +231,7 @@ class Mutation<R> {
     }
     _lazyInitializeStarted = true;
     _lazyInitialValue = callback;
-    await mutate(_lazyInitialValue!());
+    await tryMutate(_lazyInitialValue!());
     return true;
   }
 
@@ -239,7 +243,7 @@ class Mutation<R> {
       return false;
     }
     _lazyInitializeStarted = true;
-    await mutate(_lazyInitialValue!());
+    await tryMutate(_lazyInitialValue!());
     return true;
   }
 
@@ -254,7 +258,10 @@ class Mutation<R> {
     if (_closed) {
       throw const MutationClosedException();
     }
-    return _updateData(null);
+    bool updated = false;
+    updated |= _updateData(null);
+    updated |= _updateInitialized();
+    return updated;
   }
 
   bool clear() {
@@ -263,6 +270,7 @@ class Mutation<R> {
     }
     bool updated = false;
     updated |= _updateData(null);
+    updated |= _updateInitialized();
     updated |= _updateError(null);
     return updated;
   }

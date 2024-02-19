@@ -10,7 +10,7 @@ typedef MutationOnUpdateErrorCallback = void Function(Object? error,
     {Object? before});
 typedef MutationOnUpdateLoadingCallback = void Function(bool loading);
 typedef MutationOnUpdateInitializedCallback = void Function();
-typedef MutationLazyInitialValueCallback<R> = FutureOr<R> Function();
-typedef MutationInitialValueCallback<R> = R Function();
+typedef MutationLazyInitialValueCallback<R> = FutureOr<R?> Function();
+typedef MutationInitialValueCallback<R> = R? Function();
 
 typedef MutationCancelFunction = void Function();
