@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_mutation/exception/mutation_closed_exception.dart';
 import 'package:flutter_mutation/exception/mutation_exception.dart';
 import 'package:flutter_mutation/mutation_key.dart';
@@ -41,6 +42,8 @@ class Mutation<R> {
 
   bool _lazyInitializeStarted = false;
 
+  bool get isAttached => _attachCount > 0;
+
   final List<MutationOnUpdateDataCallback<R>> _onUpdateDataList = [];
   final List<MutationOnUpdateErrorCallback> _onUpdateErrorList = [];
   final List<MutationOnUpdateInitializedCallback> _onUpdateInitializedList = [];
@@ -50,8 +53,12 @@ class Mutation<R> {
   MutationLazyInitialDataCallback<R>? _lazyInitialData;
   MutationLazyMutateCallback<R>? _lazyMutateCallback;
   MutationLazyMutateCallback<R>? _lazyMutateAppendCallback;
-  final List<bool> _autoDisposableList = [];
+  int _attachCount = 0;
 
+  @override
+  String toString() {
+    return shortHash(this);
+  }
   Mutation(this.key,
       {MutationInitialDataCallback<R>? initialData,
       MutationLazyInitialDataCallback<R>? lazyInitialData,
@@ -86,13 +93,13 @@ class Mutation<R> {
     }
   }
 
-  MutationCancelFunction addObserve({
+  MutationCancelFunction observe({
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateLoadingCallback? onUpdateLoading,
     MutationOnCloseCallback<R>? onClose,
-    bool autoDisposable = true,
+    bool attach = true,
   }) {
     if (onUpdateInitialized != null) {
       _onUpdateInitializedList.add(onUpdateInitialized);
@@ -109,30 +116,36 @@ class Mutation<R> {
     if (onClose != null) {
       _onCloseList.add(onClose);
     }
-    if (autoDisposable) {
-      lazyInitialize();
-    }
-    _autoDisposableList.add(autoDisposable);
 
-    if (_autoDisposableList.contains(true)) {
+    if (attach) {
+      _attachCount++;
+    }
+
+    if (isAttached) {
       if (_lazyMutateCallback != null) {
         final data = _lazyMutateCallback!();
         tryMutate(data);
       }
-      if (_lazyMutateAppendCallback != null) {
+      else if (_lazyMutateAppendCallback != null) {
         final data = _lazyMutateAppendCallback!();
         tryMutate(data, append: true);
+      }
+      else {
+        lazyInitialize();
       }
     }
 
     return () {
-      _autoDisposableList.removeLast();
       _removeObserve(
           onUpdateInitialized: onUpdateInitialized,
           onUpdateData: onUpdateData,
           onUpdateError: onUpdateError,
           onUpdateLoading: onUpdateLoading,
           onClose: onClose);
+
+      if (attach) {
+        _attachCount--;
+      }
     };
   }
 
@@ -220,7 +233,7 @@ class Mutation<R> {
 
   Future<bool> lazyMutate(MutationLazyMutateCallback<R> callback,
       {bool append = false}) async {
-    if (_autoDisposableList.contains(true)) {
+    if (_attachCount > 0) {
       final data = callback();
       await tryMutate(data, append: append);
       return true;

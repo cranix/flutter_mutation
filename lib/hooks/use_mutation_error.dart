@@ -31,7 +31,7 @@ Object? useMutationError<R>(
       observeKeys: observeKeys);
   final state = useListenableNotifier<Object?>(mutation.error, [mutation]);
   useEffect(() {
-    return mutation.addObserve(onUpdateError: (Object? error, {Object? before}) {
+    return mutation.observe(onUpdateError: (Object? error, {Object? before}) {
       state.value = error;
     });
   }, [mutation]);

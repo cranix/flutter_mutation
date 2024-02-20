@@ -8,8 +8,9 @@ class MutationCache {
   static final instance = MutationCache._();
   final _data = <MutationKey, Mutation>{};
   final _retainCount = <MutationKey, int>{};
-
   final _onEventMapListMap = <EventKey, Map<MutationKey, List>>{};
+  final _initialCancelFunctionMap =
+      <MutationKey, List<MutationCancelFunction>>{};
 
   MutationCache._();
 
@@ -153,6 +154,16 @@ class MutationCache {
     _onEventMapListMap[EventKey.CLOSE]?[key]?.forEach((e) => e(mutation));
   }
 
+  List<MutationCancelFunction> _getOrNewInitialFunctionList(MutationKey key) {
+    var list = _initialCancelFunctionMap[key];
+    if (list != null) {
+      return list;
+    }
+    list = [];
+    _initialCancelFunctionMap[key] = list;
+    return list;
+  }
+
   Mutation<R> getOrOpen<R>(MutationKey<R> key,
       {MutationInitialDataCallback<R>? initialData,
       MutationLazyInitialDataCallback<R>? lazyInitialData,
@@ -177,36 +188,39 @@ class MutationCache {
       _onEventMapListMap[EventKey.OPEN]?[key]?.forEach((e) {
         final res = e(mutation);
         if (res != null) {
-          mutation?.addObserve(
+          final cancelFunc = mutation!.observe(
               onClose: (mutation) {
                 res();
               },
-              autoDisposable: false);
+              attach: false);
+          _getOrNewInitialFunctionList(key).add(cancelFunc);
         }
       });
       for (var observeKey in observeKeys) {
         _onEventMapListMap[EventKey.OPEN]?[observeKey]?.forEach((e) {
           final res = e(mutation);
           if (res != null) {
-            mutation?.addObserve(
+            final cancelFunc = mutation!.observe(
                 onClose: (mutation) {
                   res();
                 },
-                autoDisposable: false);
+                attach: false);
+            _getOrNewInitialFunctionList(key).add(cancelFunc);
           }
         });
       }
       if (onOpen != null) {
         final res = onOpen(mutation);
         if (res != null) {
-          mutation.addObserve(
+          final cancelFunc = mutation.observe(
               onClose: (mutation) {
                 res();
               },
-              autoDisposable: false);
+              attach: false);
+          _getOrNewInitialFunctionList(key).add(cancelFunc);
         }
       }
-      mutation.addObserve(
+      final cancelFunc = mutation.observe(
           onUpdateData: (data, {before}) {
             _onUpdateData(key, data, before: before);
             for (var observeKey in observeKeys) {
@@ -237,7 +251,8 @@ class MutationCache {
               _onClose(observeKey, mutation);
             }
           },
-          autoDisposable: false);
+          attach: false);
+      _getOrNewInitialFunctionList(key).add(cancelFunc);
       _data[key] = mutation;
       _retainCount[key] = 0;
     }
@@ -281,6 +296,7 @@ class MutationCache {
   }
 
   bool remove(MutationKey key) {
+    _initialCancelFunctionMap.remove(key)?.forEach((element) => element());
     _retainCount.remove(key);
     return _data.remove(key) != null;
   }

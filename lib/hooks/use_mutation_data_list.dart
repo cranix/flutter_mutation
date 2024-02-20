@@ -31,7 +31,7 @@ List<R> useMutationDataList<R>(
       observeKeys: observeKeys);
   final state = useListenableNotifier<List<R>>(mutation.dataList, [mutation]);
   useEffect(() {
-    return mutation.addObserve(onUpdateData: (R? data, {R? before}) {
+    return mutation.observe(onUpdateData: (R? data, {R? before}) {
       state.value = mutation.dataList;
     });
   }, [mutation]);

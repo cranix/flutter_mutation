@@ -30,7 +30,7 @@ bool useMutationLoading<R>(
       observeKeys: observeKeys);
   final state = useListenableNotifier<bool>(mutation.isLoading, [mutation]);
   useEffect(() {
-    return mutation.addObserve(onUpdateLoading: (bool loading) {
+    return mutation.observe(onUpdateLoading: (bool loading) {
       state.value = loading;
     });
   }, [mutation]);

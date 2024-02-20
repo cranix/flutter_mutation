@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
 
+final MutationKey<String> lazyMutateKey =
+    MutationKey<String>().retain(onUpdateData: (data, {before}) {
+  print("onUpdateData:$data");
+}, onUpdateLoading: (loading) {
+  print("onUpdateLoading:$loading");
+});
 
 class LazyMutatePage extends HookWidget {
   const LazyMutatePage({super.key});
@@ -25,19 +31,19 @@ class LazyMutatePage extends HookWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             HookBuilder(builder: (context) {
-              final loading = useMutationLoading<String>(keyOf: "lazyMutate");
+              final loading = useMutationLoading<String>(key: lazyMutateKey);
               return loading
                   ? const Text("Loading...")
                   : const Text("complete");
             }),
             HookBuilder(builder: (context) {
               final data = useMutationData(
-                  keyOf: "lazyMutate", lazyInitialData: LazyMutateApi.get);
+                  key: lazyMutateKey, lazyInitialData: LazyMutateApi.get);
               return Text("data:$data");
             }),
             TextButton(
                 onPressed: () {
-                  LazyMutateApi.get().mutate(MutationKey.of("lazyMutate"));
+                  LazyMutateApi.get().mutate(lazyMutateKey);
                 },
                 child: const Text("refresh")),
             TextButton(

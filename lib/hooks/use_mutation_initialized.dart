@@ -31,7 +31,7 @@ bool useMutationInitialized<R>(
   final state =
       useListenableNotifier<bool>(key?.isInitialized ?? false, [mutation]);
   useEffect(() {
-    return mutation.addObserve(onUpdateInitialized: () {
+    return mutation.observe(onUpdateInitialized: () {
       state.value = true;
     });
   }, [mutation]);
