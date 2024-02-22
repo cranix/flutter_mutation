@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_mutation/mutation.dart';
 import 'package:flutter_mutation/mutation_key.dart';
 import 'package:flutter_mutation/mutation_types.dart';
@@ -303,5 +304,10 @@ class MutationCache {
 
   Mutation<R>? getMutation<R>(MutationKey<R> key) {
     return _data[key] as Mutation<R>?;
+  }
+
+  @override
+  String toString() {
+    return "${shortHash(this)}\nupdateData:${_onEventMapListMap[EventKey.DATA]?.length ?? 0}\nupdateError:${_onEventMapListMap[EventKey.ERROR]?.length ?? 0}\nupdateInitialized:${_onEventMapListMap[EventKey.INITIALIZED]?.length ?? 0}\nupdateLoading:${_onEventMapListMap[EventKey.LOADING]?.length ?? 0}\nclose:${_onEventMapListMap[EventKey.CLOSE]?.length ?? 0}, open:${_onEventMapListMap[EventKey.OPEN]?.length ?? 0}";
   }
 }

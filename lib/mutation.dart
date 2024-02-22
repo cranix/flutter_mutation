@@ -57,8 +57,9 @@ class Mutation<R> {
 
   @override
   String toString() {
-    return shortHash(this);
+    return "${shortHash(this)}\nupdateData:${_onUpdateDataList.length}\nupdateError:${_onUpdateErrorList.length}\nupdateInitialized:${_onUpdateInitializedList.length}\nupdateLoading:${_onUpdateLoadingList.length}\nclose:${_onCloseList.length}";
   }
+
   Mutation(this.key,
       {MutationInitialDataCallback<R>? initialData,
       MutationLazyInitialDataCallback<R>? lazyInitialData,
@@ -125,12 +126,10 @@ class Mutation<R> {
       if (_lazyMutateCallback != null) {
         final data = _lazyMutateCallback!();
         tryMutate(data);
-      }
-      else if (_lazyMutateAppendCallback != null) {
+      } else if (_lazyMutateAppendCallback != null) {
         final data = _lazyMutateAppendCallback!();
         tryMutate(data, append: true);
-      }
-      else {
+      } else {
         lazyInitialize();
       }
     }

@@ -2,6 +2,7 @@ import 'package:example/pagination/pagination_api.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
+import 'package:flutter_mutation/mutation_cache.dart';
 
 class PaginationPage extends HookWidget {
   const PaginationPage({super.key});
@@ -14,6 +15,7 @@ class PaginationPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("cache:${MutationCache.instance}");
     final mutationKey = useMutationKey<PaginationResponse>();
     final onPressMore = useCallback(() {
       PaginationApi.getList(mutationKey.data?.nextPageKey)

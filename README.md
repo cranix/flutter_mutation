@@ -29,32 +29,26 @@ dependencies:
 
 - async get
 ```dart
-class AsyncGetPage extends HookWidget {
-  const AsyncGetPage({super.key});
 
+class GettingStartedPage extends HookWidget {
+  const GettingStartedPage({super.key});
   static MaterialPageRoute createRoute() {
     return MaterialPageRoute(builder: (context) {
-      return const AsyncGetPage();
+      return const GettingStartedPage();
     });
   }
-
   @override
   Widget build(BuildContext context) {
-    final mutation = useMutation<int>();
-    final onPressRequest = useCallback(() {
-      AsyncGetApi.get()
-          .mutate(mutation);
-    }, []);
     return Scaffold(
       appBar: AppBar(
-        title: const Text("async get page"),
+        title: const Text("getting started page"),
       ),
       body: Center(
         child: Stack(
           alignment: Alignment.center,
           children: [
             HookBuilder(builder: (context) {
-              final loading = useMutationLoading(mutation);
+              final loading = useMutationLoading(keyOf: "get");
               return Visibility(
                   visible: loading, child: const CircularProgressIndicator());
             }),
@@ -62,11 +56,26 @@ class AsyncGetPage extends HookWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 HookBuilder(builder: (context) {
-                  final data = useMutationData(mutation);
-                  return Text("result:$data");
+                  final data = useMutationLoading(keyOf: "get");
+                  return Text("loading:$data");
+                }),
+                HookBuilder(builder: (context) {
+                  final data = useMutationData(keyOf: "get");
+                  return Text("data:$data");
+                }),
+                HookBuilder(builder: (context) {
+                  final data = useMutationInitialized(keyOf: "get");
+                  return Text("initialized:$data");
+                }),
+                HookBuilder(builder: (context) {
+                  final data = useMutationError(keyOf: "get");
+                  return Text("error:$data");
                 }),
                 TextButton(
-                    onPressed: onPressRequest, child: const Text("request"))
+                    onPressed: () async {
+                      MutationKey.of("get").mutate(GettingStartedApi.get());
+                    },
+                    child: const Text("mutate")),
               ],
             ),
           ],
@@ -75,11 +84,14 @@ class AsyncGetPage extends HookWidget {
     );
   }
 }
+
+
 ```
 
 
 - pagination
 ```dart
+
 class PaginationPage extends HookWidget {
   const PaginationPage({super.key});
 
@@ -91,26 +103,27 @@ class PaginationPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation =
-        useMutation<PaginationResponse>(getInitialValue: PaginationApi.getList);
+    print("cache:${MutationCache.instance}");
+    final mutationKey = useMutationKey<PaginationResponse>();
     final onPressMore = useCallback(() {
-      PaginationApi.getList(mutation.data?.nextPageKey)
-          .mutate(mutation, append: true);
+      PaginationApi.getList(mutationKey.data?.nextPageKey)
+          .mutate(mutationKey, append: true);
     }, []);
     final onRefresh = useCallback(() async {
-      return PaginationApi.getList().mutate(mutation);
+      return PaginationApi.getList().mutate(mutationKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
-        title: const Text("caching page"),
+        title: const Text("pagination page"),
       ),
       body: RefreshIndicator(
         onRefresh: onRefresh,
         child: HookBuilder(builder: (context) {
-          final dataList = useMutationDataList(mutation);
-          final loading = useMutationLoading(mutation);
+          final dataList = useMutationDataList(key: mutationKey);
+          final loading = useMutationLoading(
+              key: mutationKey, lazyInitialData: PaginationApi.getList);
           final list = useMemoized(
-              () => dataList.expand((element) => element.list).toList(),
+                  () => dataList.expand((element) => element.list).toList(),
               [dataList]);
           return ListView.builder(
             itemCount: list.length + 1,
@@ -133,14 +146,16 @@ class PaginationPage extends HookWidget {
     );
   }
 }
+
+
+
 ```
 
 
 - caching
 ```dart
 
-Mutation<CachingResponse> useCachingMutation() => useMutation<CachingResponse>(
-    getInitialValue: CachingApi.get, retainKey: "CachingApi.get");
+final MutationKey<CachingResponse> cacheKey = MutationKey.of("aa");
 
 class CachingPage extends HookWidget {
   const CachingPage({super.key});
@@ -153,9 +168,14 @@ class CachingPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation = useCachingMutation();
+    print("cache:${MutationCache.instance}");
+    useEffect(() {
+      return cacheKey.observe(onClose: (mutation) {
+        print("closed:$mutation");
+      });
+    }, [cacheKey]);
     final onPressRefresh = useCallback(() async {
-      await CachingApi.get().mutate(mutation);
+      await CachingApi.get().mutate(cacheKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -165,14 +185,17 @@ class CachingPage extends HookWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            HookBuilder(
+                key: UniqueKey(),
+                builder: (context) {
+                  final loading = useMutationLoading(key: cacheKey);
+                  return loading
+                      ? const Text("Loading...")
+                      : const Text("complete");
+                }),
             HookBuilder(builder: (context) {
-              final loading = useMutationLoading(mutation);
-              return loading
-                  ? const Text("Loading...")
-                  : const Text("complete");
-            }),
-            HookBuilder(builder: (context) {
-              final data = useMutationData(mutation);
+              final data = useMutationData(
+                  key: cacheKey, lazyInitialData: CachingApi.get);
               return Text("title:${data?.title}");
             }),
             TextButton(onPressed: onPressRefresh, child: const Text("refresh")),
@@ -200,9 +223,8 @@ class CachingNextPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mutation = useCachingMutation();
     final onPressRefresh = useCallback(() async {
-      await CachingApi.get().mutate(mutation);
+      await CachingApi.get().mutate(cacheKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -213,13 +235,14 @@ class CachingNextPage extends HookWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             HookBuilder(builder: (context) {
-              final loading = useMutationLoading(mutation);
+              final loading = useMutationLoading(key: cacheKey);
               return loading
                   ? const Text("Loading...")
                   : const Text("complete");
             }),
             HookBuilder(builder: (context) {
-              final data = useMutationData(mutation);
+              final data = useMutationData(
+                  lazyInitialData: CachingApi.get, key: cacheKey);
               return Text(
                   "nickname: ${data?.nickname}\ncontents: ${data?.contents}");
             }),
@@ -238,17 +261,11 @@ class CachingNextPage extends HookWidget {
 ```dart
 
 class GlobalStateMutations {
-  static final authToken = Mutation<String>(
-      getInitialValue: () async {
-        // load authToken
-      },
-      onUpdateData: (data) {
-        // save authToken
-      },
-      onClear: () {
-        // remove authToken
-      }
-  );
+  static final authTokenKey = MutationKey<String>().retain(onOpen: (mutation) {
+    print("onOpen:$mutation");
+  }, onUpdateData: (data, {before}) {
+    print("onUpdateData:$data, $before");
+  });
 }
 
 class GlobalStatePage extends HookWidget {
@@ -262,11 +279,12 @@ class GlobalStatePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("cache:${MutationCache.instance}");
     final onPressLogin = useCallback(() {
-      GlobalStateApi.postLogin().mutate(GlobalStateMutations.authToken);
+      GlobalStateApi.postLogin().mutate(GlobalStateMutations.authTokenKey);
     }, []);
     final onPressClear = useCallback(() {
-      GlobalStateMutations.authToken.clear();
+      GlobalStateMutations.authTokenKey.clear();
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -278,7 +296,7 @@ class GlobalStatePage extends HookWidget {
           children: [
             HookBuilder(builder: (context) {
               final loading =
-                  useMutationLoading(GlobalStateMutations.authToken);
+              useMutationLoading(key: GlobalStateMutations.authTokenKey);
               return Visibility(
                   visible: loading, child: const CircularProgressIndicator());
             }),
@@ -286,7 +304,8 @@ class GlobalStatePage extends HookWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 HookBuilder(builder: (context) {
-                  final data = useMutationData(GlobalStateMutations.authToken);
+                  final data =
+                  useMutationData(key: GlobalStateMutations.authTokenKey);
                   return Text("authToken:$data");
                 }),
                 TextButton(onPressed: onPressLogin, child: const Text("login")),
@@ -299,6 +318,127 @@ class GlobalStatePage extends HookWidget {
     );
   }
 }
+
+```
+
+- lazy mutate
+```dart
+
+final MutationKey<String> lazyMutateKey =
+    MutationKey<String>().retain(onUpdateData: (data, {before}) {
+  print("onUpdateData:$data");
+}, onUpdateLoading: (loading) {
+  print("onUpdateLoading:$loading");
+});
+
+class LazyMutatePage extends HookWidget {
+  const LazyMutatePage({super.key});
+
+  static MaterialPageRoute createRoute() {
+    return MaterialPageRoute(builder: (context) {
+      return const LazyMutatePage();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    print("cache:${MutationCache.instance}");
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("lazy mutate page"),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            HookBuilder(builder: (context) {
+              final loading = useMutationLoading<String>(key: lazyMutateKey);
+              return loading
+                  ? const Text("Loading...")
+                  : const Text("complete");
+            }),
+            HookBuilder(builder: (context) {
+              final data = useMutationData(
+                  key: lazyMutateKey, lazyInitialData: LazyMutateApi.get);
+              return Text("data:$data");
+            }),
+            TextButton(
+                onPressed: () {
+                  LazyMutateApi.get().mutate(lazyMutateKey);
+                },
+                child: const Text("refresh")),
+            TextButton(
+                onPressed: () {
+                  lazyMutateNextKey.lazyMutate(LazyMutateApi.get2);
+                },
+                child: const Text("lazyMutateNext")),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(LazyMutateNextPage.createRoute());
+                },
+                child: const Text("next"))
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+final MutationKey<String> lazyMutateNextKey =
+MutationKey<String>().retain(onUpdateData: (data, {before}) {
+  print("onUpdateData:$data");
+}, onUpdateLoading: (loading) {
+  print("onUpdateLoading:$loading");
+});
+
+class LazyMutateNextPage extends HookWidget {
+  const LazyMutateNextPage({super.key});
+
+  static MaterialPageRoute createRoute() {
+    return MaterialPageRoute(builder: (context) {
+      return const LazyMutateNextPage();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("lazy mutate next page"),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            HookBuilder(builder: (context) {
+              final loading = useMutationLoading(key: lazyMutateNextKey);
+              return loading
+                  ? const Text("Loading...")
+                  : const Text("complete");
+            }),
+            HookBuilder(builder: (context) {
+              final data = useMutationData(key: lazyMutateNextKey);
+              return Text("data: $data");
+            }),
+            TextButton(
+                onPressed: () {
+                  lazyMutateNextKey.lazyMutate(LazyMutateApi.get2);
+                },
+                child: const Text("lazyMutate")),
+            TextButton(
+                onPressed: () {
+                  lazyMutateKey.lazyMutate(LazyMutateApi.get);
+                },
+                child: const Text("lazyMutateBefore"))
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
 ```
 

@@ -2,11 +2,13 @@ import 'package:example/async_get/async_get_page.dart';
 import 'package:example/async_get2/async_get2_page.dart';
 import 'package:example/caching/caching_page.dart';
 import 'package:example/delayed/delayed_page.dart';
+import 'package:example/getting_started/getting_started_page.dart';
 import 'package:example/global_state/global_state_page.dart';
 import 'package:example/lazy_mutate/lazy_mutate_page.dart';
 import 'package:example/mutation_link/mutation_link_page.dart';
 import 'package:example/pagination/pagination_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_mutation/mutation_cache.dart';
 
 void main() {
   runApp(const MyApp());
@@ -101,6 +103,11 @@ class MyHomePage extends StatelessWidget {
                   Navigator.of(context).push(LazyMutatePage.createRoute());
                 },
                 child: const Text("lazy mutate test")),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(GettingStartedPage.createRoute());
+                },
+                child: const Text("getting started")),
           ],
         ),
       ),

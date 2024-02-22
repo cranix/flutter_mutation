@@ -3,6 +3,7 @@ import 'package:example/global_state/global_state_mutations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
+import 'package:flutter_mutation/mutation_cache.dart';
 
 class GlobalStatePage extends HookWidget {
   const GlobalStatePage({super.key});
@@ -15,6 +16,7 @@ class GlobalStatePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("cache:${MutationCache.instance}");
     final onPressLogin = useCallback(() {
       GlobalStateApi.postLogin().mutate(GlobalStateMutations.authTokenKey);
     }, []);

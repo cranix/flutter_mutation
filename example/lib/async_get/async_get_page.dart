@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:flutter_mutation/flutter_mutation.dart';
 import 'package:flutter_mutation/hooks/use_mutation_initialized.dart';
+import 'package:flutter_mutation/mutation_cache.dart';
 
 class AsyncGetPage extends HookWidget {
   const AsyncGetPage({super.key});
@@ -15,6 +16,7 @@ class AsyncGetPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    print("cache:${MutationCache.instance}");
     final mutationKey = useMutationKey<int>();
     return Scaffold(
       appBar: AppBar(
