@@ -57,7 +57,7 @@ class Mutation<R> {
 
   @override
   String toString() {
-    return "${shortHash(this)}\nupdateData:${_onUpdateDataList.length}\nupdateError:${_onUpdateErrorList.length}\nupdateInitialized:${_onUpdateInitializedList.length}\nupdateLoading:${_onUpdateLoadingList.length}\nclose:${_onCloseList.length}";
+    return "${shortHash(this)}(d:${_onUpdateDataList.length},e:${_onUpdateErrorList.length},i:${_onUpdateInitializedList.length},l:${_onUpdateLoadingList.length},c:${_onCloseList.length})";
   }
 
   Mutation(this.key,
@@ -103,19 +103,19 @@ class Mutation<R> {
     bool attach = true,
   }) {
     if (onUpdateInitialized != null) {
-      _onUpdateInitializedList.add(onUpdateInitialized);
+      _onUpdateInitializedList.insert(0, onUpdateInitialized);
     }
     if (onUpdateData != null) {
-      _onUpdateDataList.add(onUpdateData);
+      _onUpdateDataList.insert(0, onUpdateData);
     }
     if (onUpdateError != null) {
-      _onUpdateErrorList.add(onUpdateError);
+      _onUpdateErrorList.insert(0, onUpdateError);
     }
     if (onUpdateLoading != null) {
-      _onUpdateLoadingList.add(onUpdateLoading);
+      _onUpdateLoadingList.insert(0, onUpdateLoading);
     }
     if (onClose != null) {
-      _onCloseList.add(onClose);
+      _onCloseList.insert(0, onClose);
     }
 
     if (attach) {

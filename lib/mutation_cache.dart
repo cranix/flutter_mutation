@@ -58,14 +58,14 @@ class MutationCache {
         onUpdateData(key.data, before: key.data);
       }
       final list = _getOrNewMapList(EventKey.DATA, key);
-      list.add(onUpdateData);
+      list.insert(0, onUpdateData);
     }
     if (onUpdateError != null) {
       if (initialCall) {
         onUpdateError(key.error, before: key.error);
       }
       final list = _getOrNewMapList(EventKey.ERROR, key);
-      list.add(onUpdateError);
+      list.insert(0, onUpdateError);
     }
     if (onUpdateInitialized != null) {
       if (initialCall) {
@@ -74,22 +74,22 @@ class MutationCache {
         }
       }
       final list = _getOrNewMapList(EventKey.INITIALIZED, key);
-      list.add(onUpdateInitialized);
+      list.insert(0, onUpdateInitialized);
     }
     if (onUpdateLoading != null) {
       if (initialCall) {
         onUpdateLoading(key.isLoading);
       }
       final list = _getOrNewMapList(EventKey.LOADING, key);
-      list.add(onUpdateLoading);
+      list.insert(0, onUpdateLoading);
     }
     if (onOpen != null) {
       final list = _getOrNewMapList(EventKey.OPEN, key);
-      list.add(onOpen);
+      list.insert(0, onOpen);
     }
     if (onClose != null) {
       final list = _getOrNewMapList(EventKey.CLOSE, key);
-      list.add(onClose);
+      list.insert(0, onClose);
     }
     return () {
       removeObserve(key,
@@ -293,13 +293,13 @@ class MutationCache {
       _retainCount[key] = count - 1;
       return false;
     }
-    return remove(key);
+    return close(key);
   }
 
-  bool remove(MutationKey key) {
+  bool close(MutationKey key) {
+    _data.remove(key)?.close();
     _initialCancelFunctionMap.remove(key)?.forEach((element) => element());
-    _retainCount.remove(key);
-    return _data.remove(key) != null;
+    return _retainCount.remove(key) != null;
   }
 
   Mutation<R>? getMutation<R>(MutationKey<R> key) {
@@ -308,6 +308,6 @@ class MutationCache {
 
   @override
   String toString() {
-    return "${shortHash(this)}\nupdateData:${_onEventMapListMap[EventKey.DATA]?.length ?? 0}\nupdateError:${_onEventMapListMap[EventKey.ERROR]?.length ?? 0}\nupdateInitialized:${_onEventMapListMap[EventKey.INITIALIZED]?.length ?? 0}\nupdateLoading:${_onEventMapListMap[EventKey.LOADING]?.length ?? 0}\nclose:${_onEventMapListMap[EventKey.CLOSE]?.length ?? 0}, open:${_onEventMapListMap[EventKey.OPEN]?.length ?? 0}";
+    return "${shortHash(this)}(d:${_onEventMapListMap[EventKey.DATA]?.length ?? 0},e:${_onEventMapListMap[EventKey.ERROR]?.length ?? 0},i:${_onEventMapListMap[EventKey.INITIALIZED]?.length ?? 0},l:${_onEventMapListMap[EventKey.LOADING]?.length ?? 0},c:${_onEventMapListMap[EventKey.CLOSE]?.length ?? 0},o:${_onEventMapListMap[EventKey.OPEN]?.length ?? 0})";
   }
 }

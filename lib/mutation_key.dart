@@ -122,8 +122,8 @@ class MutationKey<R> {
     return _mutation?.clearData() ?? false;
   }
 
-  void close() {
-    _mutation?.close();
+  bool close() {
+    return MutationCache.instance.close(this);
   }
 
   bool release() {

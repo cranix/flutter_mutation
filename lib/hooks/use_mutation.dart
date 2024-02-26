@@ -45,10 +45,7 @@ Mutation<R> useMutation<R>(
   }, [mutation, lazyInitialData]);
   useEffect(() {
     return () {
-      bool released = MutationCache.instance.release(mutationKey);
-      if (released) {
-        mutation.close();
-      }
+      MutationCache.instance.release(mutationKey);
     };
   }, [mutation]);
   return mutation;
