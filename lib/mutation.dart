@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:collection';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_mutation/exception/mutation_closed_exception.dart';
 import 'package:flutter_mutation/exception/mutation_exception.dart';
@@ -50,9 +48,9 @@ class Mutation<R> {
   final List<MutationOnUpdateLoadingCallback> _onUpdateLoadingList = [];
   final List<MutationOnCloseCallback<R>> _onCloseList = [];
 
-  MutationLazyInitialDataCallback<R>? _lazyInitialData;
-  MutationLazyMutateCallback<R>? _lazyMutateCallback;
-  MutationLazyMutateCallback<R>? _lazyMutateAppendCallback;
+  MutationFetchCallback<R>? _lazyInitialData;
+  MutationFetchCallback<R>? _lazyMutateCallback;
+  MutationFetchCallback<R>? _lazyMutateAppendCallback;
   int _attachCount = 0;
 
   @override
@@ -62,7 +60,7 @@ class Mutation<R> {
 
   Mutation(this.key,
       {MutationInitialDataCallback<R>? initialData,
-      MutationLazyInitialDataCallback<R>? lazyInitialData,
+      MutationFetchCallback<R>? lazyInitialData,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
@@ -230,7 +228,7 @@ class Mutation<R> {
     return true;
   }
 
-  Future<bool> lazyMutate(MutationLazyMutateCallback<R> callback,
+  Future<bool> lazyMutate(MutationFetchCallback<R> callback,
       {bool append = false}) async {
     if (_attachCount > 0) {
       final data = callback();
@@ -273,7 +271,7 @@ class Mutation<R> {
   }
 
   Future<bool> updateInitialize(
-      MutationLazyInitialDataCallback<R> callback) async {
+      MutationFetchCallback<R> callback) async {
     if (_closed) {
       throw const MutationClosedException();
     }

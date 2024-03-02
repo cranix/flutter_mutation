@@ -8,7 +8,7 @@ bool useMutationInitialized<R>(
     {MutationKey<R>? key,
     String? keyOf,
     MutationInitialDataCallback<R>? initialData,
-    MutationLazyInitialDataCallback<R>? lazyInitialData,
+    MutationFetchCallback<R>? lazyInitialData,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,

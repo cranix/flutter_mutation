@@ -22,6 +22,9 @@ class LazyMutateNextPage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    useOnAppLifecycleStateChange((previous, current) {
+      print("lazy_mutate_next_page:$current");
+    });
     return Scaffold(
       appBar: AppBar(
         title: const Text("lazy mutate next page"),
