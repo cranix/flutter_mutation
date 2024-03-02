@@ -17,7 +17,7 @@ class AsyncGet2Page extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final data = useMutationData(
-        lazyInitialData: AsyncGet2Api.get,
+        initialMutate: AsyncGet2Api.get,
         onOpen: (m) {
           print("onOpen:$m");
           return () {

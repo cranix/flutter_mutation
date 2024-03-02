@@ -52,19 +52,24 @@ class AsyncGetPage extends HookWidget {
                 }),
                 TextButton(
                     onPressed: () async {
-                      AsyncGetApi.get().mutate(mutationKey);
+                      AsyncGetApi.get().mutateNow(mutationKey);
                     },
                     child: const Text("mutate")),
                 TextButton(
                     onPressed: () {
-                      AsyncGetApi.getError().mutate(mutationKey);
+                      AsyncGetApi.getError().mutateNow(mutationKey);
                     },
                     child: const Text("mutateError")),
                 TextButton(
                     onPressed: () {
-                      mutationKey.updateInitialize(AsyncGetApi.get);
+                      mutationKey.updateInitialMutate(AsyncGetApi.get);
                     },
-                    child: const Text("updateInitialize")),
+                    child: const Text("updateInitialMutate")),
+                TextButton(
+                    onPressed: () {
+                      mutationKey.forceInitialMutate();
+                    },
+                    child: const Text("forceInitialMutate")),
                 TextButton(
                     onPressed: () {
                       mutationKey.clear();

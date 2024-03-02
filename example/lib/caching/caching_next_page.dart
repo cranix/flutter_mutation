@@ -16,7 +16,7 @@ class CachingNextPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final onPressRefresh = useCallback(() async {
-      await CachingApi.get().mutate(cacheKey);
+      await CachingApi.get().mutateNow(cacheKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -34,7 +34,7 @@ class CachingNextPage extends HookWidget {
             }),
             HookBuilder(builder: (context) {
               final data = useMutationData(
-                  lazyInitialData: CachingApi.get, key: cacheKey);
+                  initialMutate: CachingApi.get, key: cacheKey);
               return Text(
                   "nickname: ${data?.nickname}\ncontents: ${data?.contents}");
             }),

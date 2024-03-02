@@ -38,17 +38,17 @@ class LazyMutatePage extends HookWidget {
             }),
             HookBuilder(builder: (context) {
               final data = useMutationData(
-                  key: lazyMutateKey, lazyInitialData: LazyMutateApi.get);
+                  key: lazyMutateKey, initialMutate: LazyMutateApi.get);
               return Text("data:$data");
             }),
             TextButton(
                 onPressed: () {
-                  LazyMutateApi.get().mutate(lazyMutateKey);
+                  LazyMutateApi.get().mutateNow(lazyMutateKey);
                 },
                 child: const Text("refresh")),
             TextButton(
                 onPressed: () {
-                  lazyMutateNextKey.lazyMutate(LazyMutateApi.get2);
+                  lazyMutateNextKey.mutate(LazyMutateApi.get2);
                 },
                 child: const Text("lazyMutateNext")),
             TextButton(

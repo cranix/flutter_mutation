@@ -167,7 +167,7 @@ class MutationCache {
 
   Mutation<R> getOrOpen<R>(MutationKey<R> key,
       {MutationInitialDataCallback<R>? initialData,
-      MutationFetchCallback<R>? lazyInitialData,
+      MutationMutateCallback<R>? initialMutate,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -179,7 +179,7 @@ class MutationCache {
     if (mutation == null) {
       mutation = Mutation<R>(key,
           initialData: initialData,
-          lazyInitialData: lazyInitialData,
+          initialMutate: initialMutate,
           onUpdateData: onUpdateData,
           onUpdateError: onUpdateError,
           onUpdateInitialized: onUpdateInitialized,
@@ -262,7 +262,7 @@ class MutationCache {
 
   Mutation<R> retain<R>(MutationKey<R> key,
       {MutationInitialDataCallback<R>? initialData,
-      MutationFetchCallback<R>? lazyInitialData,
+      MutationMutateCallback<R>? initialMutate,
       MutationOnUpdateDataCallback<R>? onUpdateData,
       MutationOnUpdateErrorCallback? onUpdateError,
       MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -272,7 +272,7 @@ class MutationCache {
       List<MutationKey<R>> observeKeys = const []}) {
     final mutation = getOrOpen(key,
         initialData: initialData,
-        lazyInitialData: lazyInitialData,
+        initialMutate: initialMutate,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,

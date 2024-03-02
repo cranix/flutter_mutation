@@ -18,7 +18,7 @@ class GlobalStatePage extends HookWidget {
   Widget build(BuildContext context) {
     print("cache:${MutationCache.instance}");
     final onPressLogin = useCallback(() {
-      GlobalStateApi.postLogin().mutate(GlobalStateMutations.authTokenKey);
+      GlobalStateApi.postLogin().mutateNow(GlobalStateMutations.authTokenKey);
     }, []);
     final onPressClear = useCallback(() {
       GlobalStateMutations.authTokenKey.clear();

@@ -19,10 +19,10 @@ class PaginationPage extends HookWidget {
     final mutationKey = useMutationKey<PaginationResponse>();
     final onPressMore = useCallback(() {
       PaginationApi.getList(mutationKey.data?.nextPageKey)
-          .mutate(mutationKey, append: true);
+          .mutateNow(mutationKey, append: true);
     }, []);
     final onRefresh = useCallback(() async {
-      return PaginationApi.getList().mutate(mutationKey);
+      return PaginationApi.getList().mutateNow(mutationKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -33,7 +33,7 @@ class PaginationPage extends HookWidget {
         child: HookBuilder(builder: (context) {
           final dataList = useMutationDataList(key: mutationKey);
           final loading = useMutationLoading(
-              key: mutationKey, lazyInitialData: PaginationApi.getList);
+              key: mutationKey, initialMutate: PaginationApi.getList);
           final list = useMemoized(
               () => dataList.expand((element) => element.list).toList(),
               [dataList]);

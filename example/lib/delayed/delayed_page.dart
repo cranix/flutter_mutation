@@ -39,7 +39,7 @@ class DelayedPage extends HookWidget {
                           initialData: () {
                             Future.delayed(Duration(milliseconds: 5000), () {
                               print("mutationDelayed:$key");
-                              key.mutate(false);
+                              key.mutateNow(false);
                             });
                             return false;
                           });
@@ -58,7 +58,7 @@ class DelayedPage extends HookWidget {
                           initialData: () {
                             Future.delayed(Duration(milliseconds: 5000), () {
                               print("mutationDelayed:$key");
-                              key.mutate(false);
+                              key.mutateNow(false);
                             });
                             return true;
                           });
@@ -77,7 +77,7 @@ class DelayedPage extends HookWidget {
                         initialData: () {
                           Future.delayed(Duration(milliseconds: 5000), () {
                             print("mutationDelayed:$key");
-                            key.mutate(false);
+                            key.mutateNow(false);
                           });
                           return true;
                         });

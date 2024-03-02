@@ -9,7 +9,7 @@ Mutation<R> useMutation<R>(
     {MutationKey<R>? key,
     String? keyOf,
     MutationInitialDataCallback<R>? initialData,
-    MutationFetchCallback<R>? lazyInitialData,
+    MutationMutateCallback<R>? initialMutate,
     MutationOnUpdateDataCallback<R>? onUpdateData,
     MutationOnUpdateErrorCallback? onUpdateError,
     MutationOnUpdateInitializedCallback? onUpdateInitialized,
@@ -21,7 +21,7 @@ Mutation<R> useMutation<R>(
   final mutation = useMemoized(() {
     final m = MutationCache.instance.retain<R>(mutationKey,
         initialData: initialData,
-        lazyInitialData: lazyInitialData,
+        initialMutate: initialMutate,
         onUpdateData: onUpdateData,
         onUpdateError: onUpdateError,
         onUpdateInitialized: onUpdateInitialized,
@@ -36,13 +36,13 @@ Mutation<R> useMutation<R>(
     if (mutation.isInitilized) {
       return;
     }
-    if (lazyInitialData == null) {
+    if (initialMutate == null) {
       return;
     }
     Future.delayed(Duration.zero, () {
-      mutation.updateInitialize(lazyInitialData);
+      mutation.updateInitialMutate(initialMutate);
     });
-  }, [mutation, lazyInitialData]);
+  }, [mutation, initialMutate]);
   useEffect(() {
     return () {
       MutationCache.instance.release(mutationKey);

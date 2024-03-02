@@ -25,7 +25,7 @@ class CachingPage extends HookWidget {
       });
     }, [cacheKey]);
     final onPressRefresh = useCallback(() async {
-      await CachingApi.get().mutate(cacheKey);
+      await CachingApi.get().mutateNow(cacheKey);
     }, []);
     return Scaffold(
       appBar: AppBar(
@@ -45,7 +45,7 @@ class CachingPage extends HookWidget {
                 }),
             HookBuilder(builder: (context) {
               final data = useMutationData(
-                  key: cacheKey, lazyInitialData: CachingApi.get);
+                  key: cacheKey, initialMutate: CachingApi.get);
               return Text("title:${data?.title}");
             }),
             TextButton(onPressed: onPressRefresh, child: const Text("refresh")),

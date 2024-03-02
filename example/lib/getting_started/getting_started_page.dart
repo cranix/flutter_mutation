@@ -46,7 +46,7 @@ class GettingStartedPage extends HookWidget {
                 }),
                 TextButton(
                     onPressed: () async {
-                      MutationKey.of("get").mutate(GettingStartedApi.get());
+                      MutationKey.of("get").mutateNow(GettingStartedApi.get());
                     },
                     child: const Text("mutate")),
               ],

@@ -14,4 +14,4 @@ typedef MutationOnUpdateInitializedCallback = void Function();
 typedef MutationInitialDataCallback<R> = R? Function();
 
 typedef MutationCancelFunction = void Function();
-typedef MutationFetchCallback<R> = FutureOr<R?> Function();
+typedef MutationMutateCallback<R> = FutureOr<R?> Function();

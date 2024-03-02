@@ -22,13 +22,13 @@ class MutationLinkPage extends HookWidget {
       return mutationKey2.observe(onOpen: (mutation) {
         print("onOpen:$mutation");
         return mutationKey1.observe(onUpdateData: (data, {before}) {
-          MutationLinkApi.get2().mutate(mutationKey2);
+          MutationLinkApi.get2().mutateNow(mutationKey2);
         });
       });
     }, [mutationKey2]);
 
     final onPressed = useCallback(() {
-      MutationLinkApi.get1().mutate(mutationKey1);
+      MutationLinkApi.get1().mutateNow(mutationKey1);
     }, []);
     return Scaffold(
       appBar: AppBar(

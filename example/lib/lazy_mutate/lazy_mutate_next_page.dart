@@ -45,12 +45,12 @@ class LazyMutateNextPage extends HookWidget {
             }),
             TextButton(
                 onPressed: () {
-                  lazyMutateNextKey.lazyMutate(LazyMutateApi.get2);
+                  lazyMutateNextKey.mutate(LazyMutateApi.get2);
                 },
                 child: const Text("lazyMutate")),
             TextButton(
                 onPressed: () {
-                  lazyMutateKey.lazyMutate(LazyMutateApi.get);
+                  lazyMutateKey.mutate(LazyMutateApi.get);
                 },
                 child: const Text("lazyMutateBefore"))
           ],

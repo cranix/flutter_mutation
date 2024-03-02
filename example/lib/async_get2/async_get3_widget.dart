@@ -11,7 +11,7 @@ class AsyncGet3Widget extends HookWidget {
   Widget build(BuildContext context) {
     print("cache:${MutationCache.instance}");
     final data = useMutationData(
-        lazyInitialData: AsyncGet2Api.get3
+        initialMutate: AsyncGet2Api.get3
     );
     return Text(data ?? "loading");
   }
