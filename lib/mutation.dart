@@ -279,8 +279,7 @@ class Mutation<R> {
     }
     _initializeStarted = true;
     _initialMutateCallback = callback;
-    await tryMutate(_initialMutateCallback!());
-    return true;
+    return await mutate(_initialMutateCallback!);
   }
 
   Future<bool> forceInitialMutate() async {
@@ -290,8 +289,7 @@ class Mutation<R> {
     if (_initialMutateCallback == null) {
       return false;
     }
-    await tryMutate(_initialMutateCallback!());
-    return true;
+    return await mutate(_initialMutateCallback!);
   }
 
   Future<bool> _initialMutate() async {
