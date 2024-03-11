@@ -34,14 +34,15 @@ Mutation<R> useMutation<R>(
   }, [mutationKey]);
   useEffect(() {
     if (mutation.isInitilized) {
-      return;
+      return null;
     }
     if (initialMutate == null) {
-      return;
+      return null;
     }
     Future.delayed(Duration.zero, () {
       mutation.updateInitialMutate(initialMutate);
     });
+    return null;
   }, [mutation, initialMutate]);
   useEffect(() {
     return () {

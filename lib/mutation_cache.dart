@@ -40,7 +40,7 @@ class MutationCache {
     }
     final res = list.remove(value);
     if (list.isEmpty) {
-      map.remove(event);
+      _onEventMapListMap.remove(event);
     }
     return res;
   }
@@ -111,25 +111,26 @@ class MutationCache {
     MutationOnOpenCallback<R>? onOpen,
     MutationOnCloseCallback<R>? onClose,
   }) {
+    bool flag = false;
     if (onUpdateData != null) {
-      return _removeMapList(EventKey.DATA, key, onUpdateData);
+      flag |= _removeMapList(EventKey.DATA, key, onUpdateData);
     }
     if (onUpdateError != null) {
-      return _removeMapList(EventKey.ERROR, key, onUpdateError);
+      flag |= _removeMapList(EventKey.ERROR, key, onUpdateError);
     }
     if (onUpdateInitialized != null) {
-      return _removeMapList(EventKey.INITIALIZED, key, onUpdateInitialized);
+      flag |= _removeMapList(EventKey.INITIALIZED, key, onUpdateInitialized);
     }
     if (onUpdateLoading != null) {
-      return _removeMapList(EventKey.LOADING, key, onUpdateLoading);
+      flag |= _removeMapList(EventKey.LOADING, key, onUpdateLoading);
     }
     if (onOpen != null) {
-      return _removeMapList(EventKey.OPEN, key, onOpen);
+      flag |= _removeMapList(EventKey.OPEN, key, onOpen);
     }
     if (onClose != null) {
-      return _removeMapList(EventKey.CLOSE, key, onClose);
+      flag |= _removeMapList(EventKey.CLOSE, key, onClose);
     }
-    return false;
+    return flag;
   }
 
   _onUpdateData(MutationKey retainKey, dynamic data, {dynamic before}) {
