@@ -40,7 +40,7 @@ class MutationCache {
     }
     final res = list.remove(value);
     if (list.isEmpty) {
-      _onEventMapListMap.remove(event);
+      map.remove(key);
     }
     return res;
   }

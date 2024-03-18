@@ -292,6 +292,17 @@ class Mutation<R> {
     return await mutate(_initialMutateCallback!);
   }
 
+  Future<bool> forceInitialMutateNow() async {
+    if (_closed) {
+      throw const MutationClosedException();
+    }
+    if (_initialMutateCallback == null) {
+      return false;
+    }
+    await tryMutate(_initialMutateCallback!());
+    return true;
+  }
+
   Future<bool> _initialMutate() async {
     if (_closed) {
       throw const MutationClosedException();

@@ -1,5 +1,6 @@
 import 'package:example/async_get/async_get_page.dart';
 import 'package:example/async_get2/async_get2_page.dart';
+import 'package:example/async_get3/async_get_page3.dart';
 import 'package:example/caching/caching_page.dart';
 import 'package:example/delayed/delayed_page.dart';
 import 'package:example/getting_started/getting_started_page.dart';
@@ -108,6 +109,11 @@ class MyHomePage extends StatelessWidget {
                   Navigator.of(context).push(GettingStartedPage.createRoute());
                 },
                 child: const Text("getting started")),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(context).push(AsyncGetPage3.createRoute());
+                },
+                child: const Text("async get3")),
           ],
         ),
       ),
